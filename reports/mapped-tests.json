@@ -1,0 +1,75 @@
+{
+  "source_commit": "338c82022d5b639adc312392f6d81c8861e386ed",
+  "kind": "CMOS5L mapped zero-delay functional simulation",
+  "pdk_commit": "607e18d4bd9214a52575c194b4181ef449f9252f",
+  "netlist_sha256": "90f573c38658973723d8b30d931c53fc0b71045d397475357fa15c51d6dc009d",
+  "functional_models_sha256": "db0cfacce7f16d5af346cefa846000d84e8a5eba8bf50d4efe411a61854bfc21",
+  "passed": 10,
+  "failed": 0,
+  "skipped": 0,
+  "tests": [
+    {
+      "name": "test_engine.all_uart_bytes",
+      "passed": true,
+      "sim_time_ns": 20844100.0,
+      "wall_time_s": 252.49577236175537
+    },
+    {
+      "name": "test_engine.random_pin_timing_and_max_delay",
+      "passed": true,
+      "sim_time_ns": 26859000.000000004,
+      "wall_time_s": 304.6575312614441
+    },
+    {
+      "name": "test_engine.wait_sample_jump_and_open_drain",
+      "passed": true,
+      "sim_time_ns": 39600.0,
+      "wall_time_s": 0.3374338150024414
+    },
+    {
+      "name": "test_engine.malformed_programs_fail_closed",
+      "passed": true,
+      "sim_time_ns": 696200.0,
+      "wall_time_s": 6.327021360397339
+    },
+    {
+      "name": "test_engine.abort_reset_and_reload",
+      "passed": true,
+      "sim_time_ns": 60300.0,
+      "wall_time_s": 0.9289977550506592
+    },
+    {
+      "name": "test_engine.writes_while_running_are_ignored",
+      "passed": true,
+      "sim_time_ns": 19400.0,
+      "wall_time_s": 0.16843485832214355
+    },
+    {
+      "name": "test_protocols.spi_all_modes_and_bit_orders",
+      "passed": true,
+      "sim_time_ns": 35136600.0,
+      "wall_time_s": 353.6410369873047
+    },
+    {
+      "name": "test_protocols.i2c_address_data_ack_and_stretching",
+      "passed": true,
+      "sim_time_ns": 14249500.0,
+      "wall_time_s": 133.89549851417542
+    },
+    {
+      "name": "test_protocols.i2c_nack_timeout_and_contention",
+      "passed": true,
+      "sim_time_ns": 1505700.0,
+      "wall_time_s": 13.763137817382812
+    },
+    {
+      "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+      "passed": true,
+      "sim_time_ns": 922800.0,
+      "wall_time_s": 7.95739483833313
+    }
+  ],
+  "limitations": "No extracted delays or analog behavior; not timing signoff or exhaustive equivalence proof.",
+  "total_sim_time_ns": 100333200.0,
+  "total_wall_time_s": 1074.172259569168
+}

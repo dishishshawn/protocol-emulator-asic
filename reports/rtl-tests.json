@@ -1,0 +1,69 @@
+{
+  "source_commit": "338c820",
+  "run_url": "https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/34901623208",
+  "kind": "RTL",
+  "tests": [
+    {
+      "name": "test_engine.all_uart_bytes",
+      "passed": true,
+      "sim_time_ns": 20844100.0,
+      "wall_time_s": 10.57030701637268
+    },
+    {
+      "name": "test_engine.random_pin_timing_and_max_delay",
+      "passed": true,
+      "sim_time_ns": 26859000.000000004,
+      "wall_time_s": 15.245891571044922
+    },
+    {
+      "name": "test_engine.wait_sample_jump_and_open_drain",
+      "passed": true,
+      "sim_time_ns": 39600.0,
+      "wall_time_s": 0.01919269561767578
+    },
+    {
+      "name": "test_engine.malformed_programs_fail_closed",
+      "passed": true,
+      "sim_time_ns": 696200.0,
+      "wall_time_s": 0.32572317123413086
+    },
+    {
+      "name": "test_engine.abort_reset_and_reload",
+      "passed": true,
+      "sim_time_ns": 60300.0,
+      "wall_time_s": 0.028551816940307617
+    },
+    {
+      "name": "test_engine.writes_while_running_are_ignored",
+      "passed": true,
+      "sim_time_ns": 19400.0,
+      "wall_time_s": 0.009519815444946289
+    },
+    {
+      "name": "test_protocols.spi_all_modes_and_bit_orders",
+      "passed": true,
+      "sim_time_ns": 35136600.0,
+      "wall_time_s": 18.3316707611084
+    },
+    {
+      "name": "test_protocols.i2c_address_data_ack_and_stretching",
+      "passed": true,
+      "sim_time_ns": 14249500.0,
+      "wall_time_s": 8.531896829605103
+    },
+    {
+      "name": "test_protocols.i2c_nack_timeout_and_contention",
+      "passed": true,
+      "sim_time_ns": 1505700.0,
+      "wall_time_s": 0.8136765956878662
+    },
+    {
+      "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+      "passed": true,
+      "sim_time_ns": 922800.0,
+      "wall_time_s": 0.5151228904724121
+    }
+  ],
+  "passed": 10,
+  "failed": 0
+}

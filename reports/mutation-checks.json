@@ -1,0 +1,23 @@
+{
+  "source_commit": "338c820",
+  "kind": "RTL mutation sanity checks",
+  "method": "Temporary copies only; canonical RTL unchanged; test compilation and simulation must run before an assertion failure counts.",
+  "checks": [
+    {
+      "mutation": "disabled_contention_check",
+      "expected_detector": "i2c_nack_timeout_and_contention",
+      "detected": true,
+      "failure_message": "assert (33 & 224) == 160",
+      "mutated_engine_sha256": "c62d43b28aaece51a8cf8312753ab25e86428ebb6c26570ea47ab61143ae9df3",
+      "change": "CHECK_TX faults only for an invalid lane; the received-bit versus last-transmitted-bit mismatch condition is removed."
+    },
+    {
+      "mutation": "reversed_receive_shift",
+      "expected_detector": "spi_all_modes_and_bit_orders",
+      "detected": true,
+      "failure_message": "(33, 0, False)",
+      "mutated_engine_sha256": "8c3b35255c3f242d48fb66f98b318c3acc2ba14e3b394d870cec0080b3915c7f",
+      "change": "IN uses !instruction[3] instead of instruction[3] to select receive shift direction."
+    }
+  ]
+}

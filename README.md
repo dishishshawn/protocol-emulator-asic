@@ -9,7 +9,7 @@ The chip executes firmware that drives, samples and shifts data through five bid
 - 64 × 32-bit writable instruction store, byte transmit/receive registers, counted loops and input-dependent branches.
 - UART 8N1 transmit; SPI full-duplex byte transfer in all four modes and both bit orders.
 - I²C single-controller address + data write, ACK/NACK, bounded clock stretching and detection of transmitted-bit contention.
-- Ten RTL regression tests pass, including independent pin-level SPI and wired-AND I²C peers.
+- All ten regression tests pass in RTL and again on the CMOS5L mapped netlist, including independent pin-level SPI and wired-AND I²C peers. GitHub RTL CI is green.
 - CMOS5L mapping: **7,963 cells, 183,441.9636 µm² (0.18344 mm²)**, typical 1.2 V / 25 °C library. This is pre-layout cell area, not final chip area or timing closure.
 
 The allocation is 8×4 Tiny Tapeout tiles with a provisional 10 MHz clock. See [verification](docs/verification.md), [architecture](docs/info.md), [mapped-area evidence](reports/cmos5l-area.json) and [roadmap](docs/roadmap.md).
