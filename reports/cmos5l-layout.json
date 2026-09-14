@@ -1,0 +1,112 @@
+{
+  "title": "First complete CMOS5L physical build (place, route, signoff)",
+  "date": "2026-09-14",
+  "run": "Docker mode (ghcr.io/librelane/librelane:3.1.0.dev3, same command as tt-gds-action) and rootless mode (nix-portable + LibreLane flake) were both run; all 193 final metrics equal, routed netlist and DEF byte-identical, GDS geometry identical (KLayout LayoutDiff; only stream timestamps differ).",
+  "allocation": {
+    "tiles": "6x4",
+    "die_area_um": "0 0 1289.28 710.64",
+    "die_area_um2": 916214,
+    "core_area_um2": 902417,
+    "note": "Competition page (2026-09-14): current maximum is 6x4; 8x4 not offered. tt-support-tools has no 8x4 template."
+  },
+  "clock": {
+    "period_ns": 100,
+    "frequency_hz": 10000000
+  },
+  "tools": {
+    "librelane": "3.1.0.dev3",
+    "openroad": "dcf36133a369abc8f3c5e5738cd4d82e4903c0e0 (2026-02-17)",
+    "yosys": "0.66 86f2ddebce7e98ce7cacc27e8a5c14cb53b51b51",
+    "klayout": "0.30.9",
+    "magic": "8.3.674",
+    "netgen": "1.5.320",
+    "verilator": "5.046",
+    "tt_support_tools": "ihp-sg13cmos5l da63c9927411e3aca350977d653d24bbf5bca972",
+    "pdk": "IHP-Open-PDK 2bbec755dc67ca3db0261c3d6163e15735d66710 (ihp-sg13cmos5l + ihp-sg13g2/libs.tech)"
+  },
+  "sources": {
+    "src/project.v": "b8272d6bceffb1e0e6091825ba1edf43b88eb4b4b591d9344d9c0fff1d82c296",
+    "src/engine.v": "60e23bcdc48e48a9c3762c035ba297f2f46c7b0abdff7624b4fc0aaa22cfb38c",
+    "src/config.json": "d38a86ffb884e04d067b0c00b471fe557552a59a0890160d238a3a37b87edfe3",
+    "info.yaml": "c4e98b56396ddfc92bbffc8d5dc46bac94c5789baa9fe752e930e30e78747f4b"
+  },
+  "git_commit": "9ca2558df5b2711fc4b1238955643010b1506339 (plus uncommitted flow scripts/docs at run time)",
+  "results": {
+    "cells": {
+      "stdcell_total": 14562,
+      "sequential": 2192,
+      "logic_multi_input": 8233,
+      "inverter": 111,
+      "timing_repair_buffer": 3712,
+      "clock_buffer": 199,
+      "clock_inverter": 60,
+      "antenna_diode": 55,
+      "fill_decap": 58528,
+      "tt_tool_total_excluding_fill_tap": 12309
+    },
+    "area": {
+      "core_utilization": 0.279405,
+      "stdcell_area_um2_estimate": 252140,
+      "tt_tool_utilisation_pct": 23.688,
+      "pre_layout_mapped_area_um2": 183441.9636
+    },
+    "timing": {
+      "setup_worst_slack_ns": 57.178416508839206,
+      "setup_tns_ns": 0,
+      "hold_worst_slack_ns": 0.11338275084185438,
+      "hold_tns_ns": 0,
+      "setup_ws_by_corner": {
+        "nom_fast_1p32V_m40C": 58.72426977576492,
+        "nom_slow_1p08V_125C": 57.178416508839206,
+        "nom_typ_1p20V_25C": 58.14122681202003
+      },
+      "hold_ws_by_corner": {
+        "nom_fast_1p32V_m40C": 0.11338275084185438,
+        "nom_slow_1p08V_125C": 0.6165463869511487,
+        "nom_typ_1p20V_25C": 0.29324721259072883
+      },
+      "clock_skew_setup_ns": 0.3221202284972276,
+      "clock_skew_hold_ns": -0.36627829583869526,
+      "max_slew_violations": 0,
+      "max_cap_violations": 0,
+      "max_fanout_violations_advisory": 135
+    },
+    "routing": {
+      "wirelength_um": 573513,
+      "detailed_route_drc_errors": 0,
+      "antenna_violating_nets": 0,
+      "antenna_violating_pins": 0
+    },
+    "signoff": {
+      "magic_drc_errors": 0,
+      "magic_illegal_overlaps": 0,
+      "lvs_errors": 0,
+      "lvs_unmatched_nets": 0,
+      "lvs_unmatched_devices": 0,
+      "klayout_drc": "not run (RUN_KLAYOUT_DRC=0 in TT template)"
+    },
+    "power_estimate_w": 0.0015874650562182069,
+    "ir_drop_worst_v": 3.3e-05,
+    "flow_errors": 0
+  },
+  "outputs": {
+    "docker_run": {
+      "gds_sha256": "5acbfb1e69a211cc12f6b7837c9b71b478f147e3fc665e99b4f551559f5a3cef",
+      "netlist_sha256": "8d1a5d177eb3c028737724fa4c4c7a4c247c50ad23d8d6c7f1b60a89588ccf04",
+      "metrics_sha256": "bd2db3c3f4b8771d2d69bfa78a81c8e35fe4ed84a386577becd1084dedaa7dbe",
+      "wall_time": "about 51 min of compute (run was paused 19 min mid-DRC)"
+    },
+    "rootless_run": {
+      "gds_sha256": "46f14feeab4919d57413a582ba39585af3e42a2913dec4579935e902853a3873",
+      "netlist_sha256": "8d1a5d177eb3c028737724fa4c4c7a4c247c50ad23d8d6c7f1b60a89588ccf04",
+      "metrics_sha256": "bd2db3c3f4b8771d2d69bfa78a81c8e35fe4ed84a386577becd1084dedaa7dbe",
+      "wall_time": "0:50:15 (detailed routing ~16 min on 8 threads, Magic DRC ~30 min single-threaded)"
+    }
+  },
+  "caveats": [
+    "Generic fallback SDC (PNR_SDC_FILE unset), as in the official TT flow.",
+    "IR drop without VSRC_LOC_FILES; informational only.",
+    "No gate-level simulation with SDF yet; functional mapped tests were on the synthesis netlist, not the routed netlist.",
+    "Not yet run: tt precheck, gl_test workflows."
+  ]
+}

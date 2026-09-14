@@ -21,3 +21,9 @@ map pdk:
 
 test-mapped pdk_root:
     PATH="{{justfile_directory()}}/.venv/bin:$PATH" make -C test PDK_ROOT="{{pdk_root}}" MAPPED_NETLIST="{{justfile_directory()}}/build/cmos5l/netlist.v"
+
+setup-physical *args:
+    tools/setup-physical.sh {{args}}
+
+harden:
+    tools/harden.sh

@@ -1,4 +1,4 @@
-# Verification — September 14, 2026
+# Verification — September 14, 2026 (updated with first layout)
 
 ## RTL regression
 
@@ -63,13 +63,43 @@ Liberty library, or remaining generic cells.
 
 This is a **pre-layout area estimate**, not final die area, utilization or timing
 closure. It excludes clock-tree insertion, routing, pad cells, tie/filler cells
-and physical repair. The requested 8×4 allocation and 10 MHz frequency still
-need a complete Tiny Tapeout physical flow. The currently selected support-tools
-[CMOS5L size table](https://github.com/TinyTapeout/tt-support-tools/blob/da63c9927411e3aca350977d653d24bbf5bca972/tech/ihp-sg13cmos5l/tile_sizes.yaml)
-omits 8×4, and the corresponding DEF template is absent. The configuration
-code directly indexes that table, so an upstream update or confirmed floorplan
-is needed before full hardening.
-This does not affect standalone Liberty area mapping.
+and physical repair. See the layout section above for post-route area and timing.
+
+## First complete CMOS5L layout
+
+[Machine-readable evidence](../reports/cmos5l-layout.json). The full Tiny Tapeout
+hardening flow (LibreLane 3.1.0.dev3, tt-support-tools `ihp-sg13cmos5l`
+@ `da63c99`, IHP-Open-PDK @ `2bbec755`) completed on the 6×4 tile template
+with a 100 ns clock. The flow was run twice, in the official LibreLane Docker image (the same
+command as the `gds` GitHub workflow) and with the rootless nix-portable
+toolchain; all 193 final metrics, the routed netlist, the DEF and the GDS
+geometry are identical (`tools/harden.sh`).
+
+| Measurement | Result |
+| --- | --- |
+| Die | 1289.28 × 710.64 µm (6×4 tiles, 916,214 µm²) |
+| Cells excluding fill/tap | 12,309 (2,192 flip-flops, 2,276 hold-fix delay cells, 1,635 buffers) |
+| Core utilization | 27.9% (about 252,000 µm² of standard cells) |
+| Setup slack, slow corner 1.08 V / 125 °C | +57.18 ns (100 ns period) |
+| Hold slack, fast corner 1.32 V / −40 °C | +0.113 ns |
+| Detailed-route DRC | 0 errors after 5 iterations |
+| Magic DRC on GDS | 0 errors, 0 illegal overlaps |
+| Netgen LVS | 0 errors, 0 unmatched nets/devices/pins |
+| Antenna | 0 violating nets or pins |
+| Max slew / max cap | 0 violations; 135 advisory max-fanout (limit 10) |
+| Wire length | 573,513 µm |
+
+The critical path is about 43 ns at the slow corner, so 10 MHz closes with a
+wide margin. The pre-layout cell area of 183,442 µm² grew to about 252,000 µm²
+after buffering, hold fixing, clock tree and antenna diodes; about 45% of that
+growth is the 2,276 hold-fix delay cells inserted under the template's
+0.1 ns hold margin.
+
+Not yet done: gate-level simulation of the routed netlist with SDF, the
+`precheck` and `gl_test` workflows, and KLayout DRC (disabled in the TT
+template). The allocation was reduced from the previously assumed 8×4 to 6×4
+because the competition page now states 6×4 is the current maximum and the
+support tools have no 8×4 template.
 
 ## Mapped functional simulation
 
@@ -90,15 +120,15 @@ timing signoff. Passing these cases is not an exhaustive equivalence proof.
 
 ## What remains unverified
 
-No place and route, extracted timing, DRC/LVS, formal proof, FPGA or silicon test
-has completed. Tests do not model metastability, analog rise time, voltage
+No formal proof, FPGA or silicon test has completed, and the routed netlist has
+not yet been simulated with SDF timing. Tests do not model metastability, analog rise time, voltage
 compatibility, asynchronous host phase sweeps or reset recovery/removal.
 The I²C peer models wired-AND logic, not analog pull-up behavior. The I²C program
 is a single-controller write demonstration and does not establish complete
 multi-controller or electrical compliance.
 
-The next physical milestone is a complete CMOS5L layout with area/timing and
-DRC/LVS reports. Future functional work includes input streaming, receive FIFOs,
+The next physical milestone is gate-level simulation of the routed netlist and
+the Tiny Tapeout precheck. Future functional work includes input streaming, receive FIFOs,
 I²C reads/repeated START, UART receive and fault-injection/capture demonstrations.
 
 ## References

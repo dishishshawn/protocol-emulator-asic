@@ -9,7 +9,7 @@ project:
   clock_hz:     10000000       # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "8x4"          # Competition allocation; verify support in current hardening flow
+  tiles: "6x4"          # Competition current maximum (blog: "Set the tile size in info.yaml to 6x4"); 8x4 is not yet offered upstream
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
   top_module:  "tt_um_dishishshawn_protocol_emulator"

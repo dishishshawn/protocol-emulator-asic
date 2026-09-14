@@ -10,9 +10,10 @@ The chip executes firmware that drives, samples and shifts data through five bid
 - UART 8N1 transmit; SPI full-duplex byte transfer in all four modes and both bit orders.
 - I²C single-controller address + data write, ACK/NACK, bounded clock stretching and detection of transmitted-bit contention.
 - All ten regression tests pass in RTL and again on the CMOS5L mapped netlist, including independent pin-level SPI and wired-AND I²C peers. GitHub RTL CI is green.
-- CMOS5L mapping: **7,963 cells, 183,441.9636 µm² (0.18344 mm²)**, typical 1.2 V / 25 °C library. This is pre-layout cell area, not final chip area or timing closure.
+- CMOS5L mapping: **7,963 cells, 183,441.9636 µm² (0.18344 mm²)**, typical 1.2 V / 25 °C library, pre-layout.
+- **First complete layout** (LibreLane 3.1.0.dev3, 6×4 tiles, 10 MHz): 12,309 cells excluding fill, 27.9% core utilization, +57.2 ns setup slack at the slow corner, +0.11 ns hold slack at the fast corner, 0 routing DRC, 0 Magic DRC, LVS clean, 0 antenna violations. See [layout evidence](reports/cmos5l-layout.json).
 
-The allocation is 8×4 Tiny Tapeout tiles with a provisional 10 MHz clock. See [verification](docs/verification.md), [architecture](docs/info.md), [mapped-area evidence](reports/cmos5l-area.json) and [roadmap](docs/roadmap.md).
+The allocation is 6×4 Tiny Tapeout tiles, the current competition maximum, with a provisional 10 MHz clock. See [verification](docs/verification.md), [architecture](docs/info.md), [mapped-area evidence](reports/cmos5l-area.json) and [roadmap](docs/roadmap.md).
 
 ## Run
 
@@ -53,11 +54,22 @@ Mapping produces `build/cmos5l/summary.json`, the full log, cell statistics and 
 
 The mapped test uses functional standard-cell models without extracted delays. Full physical design, static timing, DRC/LVS and silicon validation are still ahead.
 
+## Physical build (local)
+
+`tools/setup-physical.sh` prepares a local copy of the official `gds` workflow: tt-support-tools (`ihp-sg13cmos5l` branch), LibreLane 3.1.0.dev3 with its Docker image, and IHP-Open-PDK at the pinned commit. It needs Docker usable by your user. `tools/setup-physical.sh --rootless` instead installs nix-portable and the same pinned tools from the LibreLane Nix flake for machines without Docker (`NO_DOCKER=1 tools/harden.sh`); results are identical.
+
+```sh
+just setup-physical
+just harden            # tt_tool.py --create-user-config, then --harden (Docker)
+```
+
+Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/metrics.json`, DRC and LVS reports and a PNG render. A full run takes about 50 minutes on 8 cores, most of it single-threaded Magic DRC. `tools/harden.sh` pins OpenROAD to the machine's core count because LibreLane 3.1.0.dev3 otherwise runs it single-threaded.
+
 ## CI and next work
 
 Pushes run the RTL regression. The retained official GDS, documentation and FPGA workflows are manually dispatched while the physical flow is being brought up. No competition signup or final submission has been made.
 
-Next: first complete CMOS5L layout, then host streaming/FIFOs, multi-byte transactions, I²C read/repeated START, UART receive and formal safety/liveness properties. No FPGA is required for the current work.
+Next: gate-level simulation on the routed netlist and the tt precheck, then host streaming/FIFOs, multi-byte transactions, I²C read/repeated START, UART receive and formal safety/liveness properties. No FPGA is required for the current work.
 
 ## Provenance
 

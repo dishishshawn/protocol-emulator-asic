@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Dispatch: `python -m librelane ...` (as issued by tt_tool.py) runs on the
+# LibreLane venv built on the Nix Python that Yosys/OpenROAD embed, with
+# PYTHONPATH so those embedded interpreters can import librelane. Everything
+# else (tt_tool.py itself) runs on the Python 3.11 tt-support-tools venv.
+ROOT="$(cd "$(dirname "$(readlink -f "$0")")/../.." && pwd)"
+if [ "${1:-}" = "-m" ] && [ "${2:-}" = "librelane" ]; then
+  LL="$ROOT/.tools/venv-ll/bin/python"
+  export PYTHONPATH="$("$LL" -c 'import sysconfig;print(sysconfig.get_paths()["purelib"])')${PYTHONPATH:+:$PYTHONPATH}"
+  # pip's manylinux wheels (libparse, klayout) need libstdc++; Nix Python does
+  # not search host library paths, so harden.sh supplies the flake's copy.
+  [ -n "${LL_LIBSTDCXX:-}" ] && export LD_LIBRARY_PATH="$LL_LIBSTDCXX${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  exec "$LL" "$@"
+fi
+exec "$ROOT/.tools/venv-tt/bin/python" "$@"
