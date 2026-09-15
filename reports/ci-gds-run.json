@@ -1,0 +1,14 @@
+{
+  "title": "Tiny Tapeout CI: gds, precheck and gl_test on main @ 4187ccd",
+  "date": "2026-09-16",
+  "workflow_run": "https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35032646298",
+  "jobs": {
+    "gds": "success (tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755)",
+    "precheck": "passed: 0 errors among 0 error types, 33 checks (precheck DRC disabled by the TT flow)",
+    "gl_test": "TESTS=10 PASS=10 FAIL=0 SKIP=0 on the CI gate-level netlist (zero-delay functional cell models), 100,333,200 ns simulated, 1791 s wall",
+    "viewer": "failure: GitHub Pages not enabled on the private repository (deploy-pages 404); no effect on the design"
+  },
+  "notes": [
+    "The `sdf` workflow was added afterwards and re-run manually against this gds run; its results are recorded in reports/sdf-tests.json."
+  ]
+}

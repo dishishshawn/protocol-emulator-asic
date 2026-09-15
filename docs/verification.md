@@ -116,6 +116,15 @@ regressions each exercise about one million engine clocks.
 These copies are for **zero-delay functional testing only**, never SDF or analog
 timing signoff. Passing these cases is not an exhaustive equivalence proof.
 
+## Tiny Tapeout CI on the merged main
+
+[Run 35032646298](https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35032646298)
+([summary](../reports/ci-gds-run.json)): the official `gds` job rebuilt the
+layout on GitHub, `precheck` passed with 0 errors over 33 checks, and
+`gl_test` passed all ten tests on the CI gate-level netlist. The CI GDS is
+geometrically identical to the local Docker and rootless builds. The `viewer`
+job fails only because GitHub Pages is not enabled on the private repository.
+
 ## Post-layout gate-level simulation with SDF
 
 `just test-sdf <corner>` compiles the routed, unpowered netlist (`final/nl`)
@@ -132,8 +141,9 @@ tests already change inputs on the falling clock edge, 50 ns before the next
 rising edge, so the host contract itself is unchanged.
 
 A single-test smoke run at the slow corner passes with no dropped paths. The
-full ten-test regression at the slow, fast and typical corners is running;
-results will be recorded in `reports/sdf-tests.json` when complete.
+full ten-test regression at the slow, fast and typical corners runs in the
+`sdf` GitHub workflow after each `gds` build (and locally with
+`just test-sdf`); results are recorded in `reports/sdf-tests.json`.
 
 ## What remains unverified
 
@@ -143,8 +153,7 @@ The I²C peer models wired-AND logic, not analog pull-up behavior. The I²C prog
 is a single-controller write demonstration and does not establish complete
 multi-controller or electrical compliance.
 
-The next physical milestone is a green Tiny Tapeout `precheck`/`gl_test` run
-in GitHub CI. Future functional work includes input streaming, receive FIFOs,
+The next physical milestone is the SDF-timed regression at all three corners. Future functional work includes input streaming, receive FIFOs,
 I²C reads/repeated START, UART receive and fault-injection/capture demonstrations.
 
 ## References
