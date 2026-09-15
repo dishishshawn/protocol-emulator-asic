@@ -9,7 +9,20 @@ TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(CURDIR)/../src
 PROJECT_SOURCES = project.v engine.v
 
-ifneq ($(MAPPED_NETLIST),)
+ifneq ($(SDF_NETLIST),)
+
+# Post-layout gate-level simulation with SDF back-annotation. SDF_NETLIST is the
+# unpowered routed netlist (final/nl), SDF_FILE one corner from final/sdf.
+SDF_CORNER = $(notdir $(patsubst %/,%,$(dir $(SDF_FILE))))
+SIM_BUILD = sim_build/sdf-$(SDF_CORNER)
+CELL_SOURCE = $(PDK_ROOT)/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_stdcell.v
+TIMING_CELLS = $(SIM_BUILD)/sg13cmos5l_timing.v
+COMPILE_ARGS += -gspecify -DSDF_FILE=\"$(SDF_FILE)\" -DNO_DUMP
+VERILOG_SOURCES += $(PDK_ROOT)/ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog/sg13cmos5l_udp.v
+VERILOG_SOURCES += $(TIMING_CELLS)
+VERILOG_SOURCES += $(SDF_NETLIST)
+
+else ifneq ($(MAPPED_NETLIST),)
 
 # Pre-layout mapped functional simulation; no pad cells or physical netlist needed.
 SIM_BUILD = sim_build/mapped
@@ -59,4 +72,9 @@ include $(shell cocotb-config --makefiles)/Makefile.sim
 ifneq ($(FUNCTIONAL_CELLS),)
 $(FUNCTIONAL_CELLS): $(CELL_SOURCE) $(SRC_DIR)/../tools/functional_cells.py
 	python3 $(SRC_DIR)/../tools/functional_cells.py "$<" "$@"
+endif
+
+ifneq ($(TIMING_CELLS),)
+$(TIMING_CELLS): $(CELL_SOURCE) $(SRC_DIR)/../tools/timing_cells.py
+	python3 $(SRC_DIR)/../tools/timing_cells.py "$<" "$@"
 endif

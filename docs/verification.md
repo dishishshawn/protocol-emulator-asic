@@ -95,9 +95,7 @@ after buffering, hold fixing, clock tree and antenna diodes; about 45% of that
 growth is the 2,276 hold-fix delay cells inserted under the template's
 0.1 ns hold margin.
 
-Not yet done: gate-level simulation of the routed netlist with SDF, the
-`precheck` and `gl_test` workflows, and KLayout DRC (disabled in the TT
-template). The allocation was reduced from the previously assumed 8×4 to 6×4
+KLayout DRC is disabled in the TT template and was not run. The allocation was reduced from the previously assumed 8×4 to 6×4
 because the competition page now states 6×4 is the current maximum and the
 support tools have no 8×4 template.
 
@@ -118,17 +116,35 @@ regressions each exercise about one million engine clocks.
 These copies are for **zero-delay functional testing only**, never SDF or analog
 timing signoff. Passing these cases is not an exhaustive equivalence proof.
 
+## Post-layout gate-level simulation with SDF
+
+`just test-sdf <corner>` compiles the routed, unpowered netlist (`final/nl`)
+with the PDK cell models and back-annotates the OpenSTA SDF for one corner
+through `$sdf_annotate`. Icarus cannot drive the delayed nets of
+`$setuphold`/`$recrem` and rejects `ifnone` on edge-sensitive paths, so
+`tools/timing_cells.py` generates a copy of `sg13cmos5l_stdcell.v` that drops
+the delayed-net arguments, ties each `delayed_*` net to its input, and makes
+`ifnone` paths unconditional (the SDF carries an unconditional IOPATH for every
+arc next to its COND variants). Path delays, SETUP/HOLD/RECOVERY/REMOVAL/WIDTH
+checks and notifiers are kept, so a violation drives the flip-flop UDP output
+to X and the pin-level checks fail. The SDF contains no negative limits. The
+tests already change inputs on the falling clock edge, 50 ns before the next
+rising edge, so the host contract itself is unchanged.
+
+A single-test smoke run at the slow corner passes with no dropped paths. The
+full ten-test regression at the slow, fast and typical corners is running;
+results will be recorded in `reports/sdf-tests.json` when complete.
+
 ## What remains unverified
 
-No formal proof, FPGA or silicon test has completed, and the routed netlist has
-not yet been simulated with SDF timing. Tests do not model metastability, analog rise time, voltage
+No formal proof, FPGA or silicon test has completed. Tests do not model metastability, analog rise time, voltage
 compatibility, asynchronous host phase sweeps or reset recovery/removal.
 The I²C peer models wired-AND logic, not analog pull-up behavior. The I²C program
 is a single-controller write demonstration and does not establish complete
 multi-controller or electrical compliance.
 
-The next physical milestone is gate-level simulation of the routed netlist and
-the Tiny Tapeout precheck. Future functional work includes input streaming, receive FIFOs,
+The next physical milestone is a green Tiny Tapeout `precheck`/`gl_test` run
+in GitHub CI. Future functional work includes input streaming, receive FIFOs,
 I²C reads/repeated START, UART receive and fault-injection/capture demonstrations.
 
 ## References

@@ -7,11 +7,18 @@
 module tb ();
 
   // Dump the signals to a FST file. You can view it with gtkwave or surfer.
+`ifndef NO_DUMP
   initial begin
     $dumpfile("tb.fst");
     $dumpvars(0, tb);
     #1;
   end
+`endif
+
+`ifdef SDF_FILE
+  // Post-layout timing: annotate the routed netlist with one STA corner.
+  initial $sdf_annotate(`SDF_FILE, user_project);
+`endif
 
   // Wire up the inputs and outputs:
   reg clk;
