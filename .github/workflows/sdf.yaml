@@ -1,6 +1,8 @@
 # Post-layout gate-level regression with SDF timing, on the outputs of the
-# `gds` workflow. Runs automatically after a successful gds run, or on demand
-# with that run's id. Mirrors `just test-sdf <corner>`.
+# `gds` workflow. Runs automatically after every gds run whose GDS_logs
+# artifact exists (the viewer job may fail on a private repo without Pages,
+# which marks the whole run failed), or on demand with a run id. Mirrors
+# `just test-sdf <corner>`.
 name: sdf
 on:
   workflow_run:
@@ -13,14 +15,17 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+  actions: read   # gh run download of the gds artifact
+
 env:
   PDK_REV: 2bbec755dc67ca3db0261c3d6163e15735d66710
 
 jobs:
   sdf:
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 300
+    timeout-minutes: 360
     strategy:
       fail-fast: false
       matrix:
