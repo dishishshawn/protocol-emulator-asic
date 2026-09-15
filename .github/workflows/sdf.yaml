@@ -1,0 +1,66 @@
+# Post-layout gate-level regression with SDF timing, on the outputs of the
+# `gds` workflow. Runs automatically after a successful gds run, or on demand
+# with that run's id. Mirrors `just test-sdf <corner>`.
+name: sdf
+on:
+  workflow_run:
+    workflows: [gds]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: gds workflow run id whose GDS_logs artifact to test
+        required: true
+        type: string
+
+env:
+  PDK_REV: 2bbec755dc67ca3db0261c3d6163e15735d66710
+
+jobs:
+  sdf:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 300
+    strategy:
+      fail-fast: false
+      matrix:
+        corner: [nom_slow_1p08V_125C, nom_fast_1p32V_m40C, nom_typ_1p20V_25C]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download routed netlist and SDF from the gds run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id }}
+        run: |
+          gh run download "$RUN_ID" -R "$GITHUB_REPOSITORY" -n GDS_logs -D gds
+          ls gds/runs/wokwi/final/nl gds/runs/wokwi/final/sdf/${{ matrix.corner }}
+      - name: Fetch CMOS5L cell models
+        run: |
+          git init -q pdk
+          git -C pdk remote add origin https://github.com/IHP-GmbH/IHP-Open-PDK.git
+          git -C pdk sparse-checkout set ihp-sg13cmos5l/libs.ref/sg13cmos5l_stdcell/verilog
+          git -C pdk fetch -q --depth 1 --filter=blob:none origin "$PDK_REV"
+          git -C pdk checkout -q FETCH_HEAD
+      - name: Install simulator
+        run: sudo apt-get update && sudo apt-get install -y iverilog
+      - uses: astral-sh/setup-uv@v6
+      - name: Set up Python
+        run: |
+          uv venv --python 3.12 .venv
+          uv pip install --python .venv/bin/python -r test/requirements.txt
+      - name: Run regression with SDF (${{ matrix.corner }})
+        run: |
+          PATH="$PWD/.venv/bin:$PATH" COCOTB_RESULTS_FILE=results-sdf-${{ matrix.corner }}.xml \
+          make -C test PDK_ROOT="$PWD/pdk" \
+            SDF_NETLIST="$PWD/gds/runs/wokwi/final/nl/tt_um_dishishshawn_protocol_emulator.nl.v" \
+            SDF_FILE="$PWD/gds/runs/wokwi/final/sdf/${{ matrix.corner }}/tt_um_dishishshawn_protocol_emulator__${{ matrix.corner }}.sdf"
+      - name: Test summary
+        uses: test-summary/action@v2.4
+        with:
+          paths: test/results-sdf-${{ matrix.corner }}.xml
+        if: always()
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: sdf-results-${{ matrix.corner }}
+          path: test/results-sdf-${{ matrix.corner }}.xml
