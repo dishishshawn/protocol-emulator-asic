@@ -13,11 +13,11 @@ The chip executes firmware that drives, samples and shifts data through five bid
 - Twenty RTL regressions pass: the original ten plus ten streaming, framing, queue, capture and malformed-instruction tests, with five streaming mutation controls detected (`tools/check_streaming_mutations.py`). [Streaming interface and limitations](docs/streaming.md).
 - Reproducible UART stop-bit fault demonstration with timestamped modeled-target responses: `just capture-demo`.
 
-The **earlier, pre-streaming design** completed layout on 6×4 tiles at 10 MHz:
-12,309 cells excluding fill, 27.9% utilization, +57.2 ns slow-corner setup slack,
-clean routing/Magic DRC, LVS and antenna checks, Tiny Tapeout precheck and three
-SDF regression corners. Those [baseline results](reports/cmos5l-layout.json)
-do not sign off the new RTL; the streaming physical build is being verified separately.
+The **streaming design** completed layout on 6×4 tiles at 10 MHz: 18,776 cells
+excluding fill (2,644 flip-flops), 34.1% utilization, +57.4 ns slow-corner setup
+slack, +0.12 ns fast-corner hold slack, clean routing/Magic DRC, LVS and antenna
+checks ([layout evidence](reports/cmos5l-layout.json), which also keeps the
+pre-streaming baseline). The three-corner SDF regression on this layout runs in CI.
 
 The allocation is 6×4 Tiny Tapeout tiles, the current competition maximum, with a provisional 10 MHz clock. See [verification](docs/verification.md), [architecture](docs/info.md), [mapped-area evidence](reports/cmos5l-area.json) and [roadmap](docs/roadmap.md).
 
@@ -69,7 +69,7 @@ just setup-physical
 just harden            # tt_tool.py --create-user-config, then --harden (Docker)
 ```
 
-`just test-sdf <corner> [run-dir]` then runs the pin-level tests on the routed netlist with SDF back-annotation from one STA corner (`nom_slow_1p08V_125C`, `nom_fast_1p32V_m40C`, `nom_typ_1p20V_25C`). `tools/timing_cells.py` makes an Icarus-compatible copy of the cell models that keeps the path delays. Icarus does not enforce SDF setup/hold checks, so this shows the routed netlist functions with extracted delays; STA remains the timing signoff. For the pre-streaming baseline, all three corners passed locally and in the `sdf` GitHub workflow ([evidence](reports/sdf-tests.json)).
+`just test-sdf <corner> [run-dir]` then runs the pin-level tests on the routed netlist with SDF back-annotation from one STA corner (`nom_slow_1p08V_125C`, `nom_fast_1p32V_m40C`, `nom_typ_1p20V_25C`). `tools/timing_cells.py` makes an Icarus-compatible copy of the cell models that keeps the path delays. Icarus does not enforce SDF setup/hold checks, so this shows the routed netlist functions with extracted delays; STA remains the timing signoff. For the pre-streaming baseline, all three corners passed locally and in the `sdf` GitHub workflow ([evidence](reports/sdf-tests.json)); the streaming layout's corners run in the same workflow.
 
 Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/metrics.json`, DRC and LVS reports and a PNG render. A full run takes about 50 minutes on 8 cores, most of it single-threaded Magic DRC. `tools/harden.sh` pins OpenROAD to the machine's core count because LibreLane 3.1.0.dev3 otherwise runs it single-threaded.
 
@@ -77,7 +77,7 @@ Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/
 
 Pushes run the RTL regression. The retained official GDS, documentation and FPGA workflows are manually dispatched while the physical flow is being brought up. No competition signup or final submission has been made.
 
-Next: physical verification of the streaming design, I²C repeated START, and formal safety/liveness properties. No FPGA is required for the current work.
+Next: I²C repeated START, and formal safety/liveness properties. No FPGA is required for the current work.
 
 ## Provenance
 

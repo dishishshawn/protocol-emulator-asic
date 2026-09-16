@@ -6,7 +6,7 @@ A programmable protocol exerciser for bringing up and testing hardware. Build a 
 
 ## Completed
 
-Streaming milestone: eight-byte TX/RX FIFOs, an eight-entry timestamp FIFO, multi-byte UART TX/RX and SPI/I²C programs, and a timed UART stop-bit fault demo are implemented with twenty passing RTL regressions and five detected mutation controls. Physical verification of this extension is in progress.
+Streaming milestone: eight-byte TX/RX FIFOs, an eight-entry timestamp FIFO, multi-byte UART TX/RX and SPI/I²C programs, and a timed UART stop-bit fault demo are implemented with twenty passing RTL regressions and five detected mutation controls. The streaming design completed layout on 6×4 tiles: 18,776 cells, 34.1% utilization, +57.4 ns setup slack, clean DRC/LVS/antenna.
 
 Pre-streaming baseline: the programmable UART milestone, byte transmit/receive instructions, counted loops, conditional branches, bounded waits, SPI transfers and I²C writes are implemented. Ten RTL tests pass. CMOS5L mapping gives 7,963 cells / 183,441.9636 µm² before layout. The first complete layout on 6×4 tiles closes 10 MHz with +57 ns setup slack, 27.9% utilization, and clean DRC/LVS/antenna ([evidence](../reports/cmos5l-layout.json)); the flow runs locally via `tools/harden.sh`. The private GitHub repository is `dishishshawn/protocol-emulator-asic`.
 

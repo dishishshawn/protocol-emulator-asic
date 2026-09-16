@@ -1,7 +1,7 @@
 # Streaming and timestamped capture
 
 ## Status
-Ready for review (Fable reviewing; physical rerun in progress)
+Done (reviewed and committed; CI gds/sdf on this revision pending)
 
 ## Requested outcome
 Add buffered host transfers, multi-byte protocol programs, UART receive, I²C read,
@@ -34,7 +34,7 @@ and a reproducible timed-fault/target-response capture demonstration.
 - Ran: `just capture-demo` — pass; evidence copied to `reports/fault-demo.json` and rendered to `reports/fault-demo.svg` via `tools/plot_capture.py`.
 - Ran: generic Yosys synth — 5,649 → 7,058 cells (+25%); the 6×4 block was 27.9% utilized before, so area is not a concern.
 - Fixed: README/roadmap said eighteen regressions; it is twenty.
-- Running: `tools/harden.sh` on the new RTL (`build/harden-streaming.log`); then `gds` + `sdf` workflows on GitHub after commit.
+- Ran: `tools/harden.sh` on the new RTL — Flow complete; 18,776 cells, 34.1% utilization, setup WS +57.45 ns, hold WS +0.122 ns, route DRC 0, Magic DRC 0, LVS 0, antenna 0 (`reports/cmos5l-layout.json`). `gds` run 35117387247 and the `sdf` workflow are running on GitHub.
 - Not run: `just test-mapped` on the new RTL; SDF corners on the new layout (CI will do these).
 
 ## Risks, open questions, and next owner
