@@ -125,6 +125,16 @@ layout on GitHub, `precheck` passed with 0 errors over 33 checks, and
 geometrically identical to the local Docker and rootless builds. The `viewer`
 job fails only because GitHub Pages is not enabled on the private repository.
 
+## Streaming revision
+
+After the streaming FIFOs, capture and multi-byte protocols were added
+(commit d4465ac; twenty RTL tests, five mutation controls,
+[fault demo](../reports/fault-demo.json)), the full flow was rerun: 18,776
+cells, 34.1% utilization, +57.4 ns setup and +0.12 ns hold slack, clean DRC,
+LVS and antenna locally; in CI, precheck 0 errors, gl_test 20/20 and SDF
+60/60 over three corners ([layout](../reports/cmos5l-layout.json),
+[CI](../reports/ci-gds-run.json), [SDF](../reports/sdf-tests.json)).
+
 ## Post-layout gate-level simulation with SDF
 
 [Machine-readable evidence](../reports/sdf-tests.json). `just test-sdf <corner>`

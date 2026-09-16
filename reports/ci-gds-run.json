@@ -1,14 +1,334 @@
 {
-  "title": "Tiny Tapeout CI: gds, precheck and gl_test on main @ 4187ccd",
+  "title": "Tiny Tapeout CI on the streaming revision (main @ d4465ac)",
   "date": "2026-09-16",
-  "workflow_run": "https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35032646298",
+  "workflow_run": "https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35117387247",
   "jobs": {
-    "gds": "success (tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755)",
-    "precheck": "passed: 0 errors among 0 error types, 33 checks (precheck DRC disabled by the TT flow)",
-    "gl_test": "TESTS=10 PASS=10 FAIL=0 SKIP=0 on the CI gate-level netlist (zero-delay functional cell models), 100,333,200 ns simulated, 1791 s wall",
-    "viewer": "failure: GitHub Pages not enabled on the private repository (deploy-pages 404); no effect on the design"
+    "gds": "success",
+    "precheck": "passed: 0 errors among 0 error types, 33 checks",
+    "gl_test": "TESTS=20 PASS=20 FAIL=0 SKIP=0 on the CI gate-level netlist",
+    "viewer": "success: https://dishishshawn.github.io/protocol-emulator-asic/"
   },
-  "notes": [
-    "The `sdf` workflow was added afterwards and re-run manually against this gds run; its results are recorded in reports/sdf-tests.json."
-  ]
+  "sdf_run": "https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35134937170",
+  "sdf_results": {
+    "nom_slow_1p08V_125C": [
+      {
+        "name": "test_engine.all_uart_bytes",
+        "passed": true,
+        "wall_time_s": 383.5
+      },
+      {
+        "name": "test_engine.random_pin_timing_and_max_delay",
+        "passed": true,
+        "wall_time_s": 376.2
+      },
+      {
+        "name": "test_engine.wait_sample_jump_and_open_drain",
+        "passed": true,
+        "wall_time_s": 0.6
+      },
+      {
+        "name": "test_engine.malformed_programs_fail_closed",
+        "passed": true,
+        "wall_time_s": 9.6
+      },
+      {
+        "name": "test_engine.abort_reset_and_reload",
+        "passed": true,
+        "wall_time_s": 0.8
+      },
+      {
+        "name": "test_engine.writes_while_running_are_ignored",
+        "passed": true,
+        "wall_time_s": 0.3
+      },
+      {
+        "name": "test_protocols.spi_all_modes_and_bit_orders",
+        "passed": true,
+        "wall_time_s": 573.7
+      },
+      {
+        "name": "test_protocols.i2c_address_data_ack_and_stretching",
+        "passed": true,
+        "wall_time_s": 211.1
+      },
+      {
+        "name": "test_protocols.i2c_nack_timeout_and_contention",
+        "passed": true,
+        "wall_time_s": 21.7
+      },
+      {
+        "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+        "passed": true,
+        "wall_time_s": 12.9
+      },
+      {
+        "name": "test_streaming.fifo_boundaries_backpressure_and_reset",
+        "passed": true,
+        "wall_time_s": 10.2
+      },
+      {
+        "name": "test_streaming.host_waits_for_stream_enable",
+        "passed": true,
+        "wall_time_s": 2.0
+      },
+      {
+        "name": "test_streaming.simultaneous_fifo_operations",
+        "passed": true,
+        "wall_time_s": 3.1
+      },
+      {
+        "name": "test_streaming.multibyte_spi_all_modes",
+        "passed": true,
+        "wall_time_s": 84.6
+      },
+      {
+        "name": "test_streaming.streaming_uart_transmit_and_receive",
+        "passed": true,
+        "wall_time_s": 80.7
+      },
+      {
+        "name": "test_streaming.uart_receive_back_to_back_and_false_start",
+        "passed": true,
+        "wall_time_s": 33.4
+      },
+      {
+        "name": "test_streaming.multibyte_i2c_write_and_read",
+        "passed": true,
+        "wall_time_s": 143.1
+      },
+      {
+        "name": "test_streaming.streaming_i2c_nack_and_read_timeout",
+        "passed": true,
+        "wall_time_s": 20.1
+      },
+      {
+        "name": "test_streaming.timestamp_capture_and_fault_demo",
+        "passed": true,
+        "wall_time_s": 6.1
+      },
+      {
+        "name": "test_streaming.malformed_stream_instructions",
+        "passed": true,
+        "wall_time_s": 1.0
+      }
+    ],
+    "nom_fast_1p32V_m40C": [
+      {
+        "name": "test_engine.all_uart_bytes",
+        "passed": true,
+        "wall_time_s": 325.1
+      },
+      {
+        "name": "test_engine.random_pin_timing_and_max_delay",
+        "passed": true,
+        "wall_time_s": 257.0
+      },
+      {
+        "name": "test_engine.wait_sample_jump_and_open_drain",
+        "passed": true,
+        "wall_time_s": 0.5
+      },
+      {
+        "name": "test_engine.malformed_programs_fail_closed",
+        "passed": true,
+        "wall_time_s": 7.1
+      },
+      {
+        "name": "test_engine.abort_reset_and_reload",
+        "passed": true,
+        "wall_time_s": 0.7
+      },
+      {
+        "name": "test_engine.writes_while_running_are_ignored",
+        "passed": true,
+        "wall_time_s": 0.2
+      },
+      {
+        "name": "test_protocols.spi_all_modes_and_bit_orders",
+        "passed": true,
+        "wall_time_s": 687.4
+      },
+      {
+        "name": "test_protocols.i2c_address_data_ack_and_stretching",
+        "passed": true,
+        "wall_time_s": 177.1
+      },
+      {
+        "name": "test_protocols.i2c_nack_timeout_and_contention",
+        "passed": true,
+        "wall_time_s": 17.1
+      },
+      {
+        "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+        "passed": true,
+        "wall_time_s": 8.7
+      },
+      {
+        "name": "test_streaming.fifo_boundaries_backpressure_and_reset",
+        "passed": true,
+        "wall_time_s": 11.8
+      },
+      {
+        "name": "test_streaming.host_waits_for_stream_enable",
+        "passed": true,
+        "wall_time_s": 1.5
+      },
+      {
+        "name": "test_streaming.simultaneous_fifo_operations",
+        "passed": true,
+        "wall_time_s": 2.3
+      },
+      {
+        "name": "test_streaming.multibyte_spi_all_modes",
+        "passed": true,
+        "wall_time_s": 115.4
+      },
+      {
+        "name": "test_streaming.streaming_uart_transmit_and_receive",
+        "passed": true,
+        "wall_time_s": 81.6
+      },
+      {
+        "name": "test_streaming.uart_receive_back_to_back_and_false_start",
+        "passed": true,
+        "wall_time_s": 30.0
+      },
+      {
+        "name": "test_streaming.multibyte_i2c_write_and_read",
+        "passed": true,
+        "wall_time_s": 127.0
+      },
+      {
+        "name": "test_streaming.streaming_i2c_nack_and_read_timeout",
+        "passed": true,
+        "wall_time_s": 16.6
+      },
+      {
+        "name": "test_streaming.timestamp_capture_and_fault_demo",
+        "passed": true,
+        "wall_time_s": 4.5
+      },
+      {
+        "name": "test_streaming.malformed_stream_instructions",
+        "passed": true,
+        "wall_time_s": 0.8
+      }
+    ],
+    "nom_typ_1p20V_25C": [
+      {
+        "name": "test_engine.all_uart_bytes",
+        "passed": true,
+        "wall_time_s": 255.9
+      },
+      {
+        "name": "test_engine.random_pin_timing_and_max_delay",
+        "passed": true,
+        "wall_time_s": 203.9
+      },
+      {
+        "name": "test_engine.wait_sample_jump_and_open_drain",
+        "passed": true,
+        "wall_time_s": 0.4
+      },
+      {
+        "name": "test_engine.malformed_programs_fail_closed",
+        "passed": true,
+        "wall_time_s": 5.6
+      },
+      {
+        "name": "test_engine.abort_reset_and_reload",
+        "passed": true,
+        "wall_time_s": 0.5
+      },
+      {
+        "name": "test_engine.writes_while_running_are_ignored",
+        "passed": true,
+        "wall_time_s": 0.2
+      },
+      {
+        "name": "test_protocols.spi_all_modes_and_bit_orders",
+        "passed": true,
+        "wall_time_s": 558.2
+      },
+      {
+        "name": "test_protocols.i2c_address_data_ack_and_stretching",
+        "passed": true,
+        "wall_time_s": 147.7
+      },
+      {
+        "name": "test_protocols.i2c_nack_timeout_and_contention",
+        "passed": true,
+        "wall_time_s": 14.2
+      },
+      {
+        "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+        "passed": true,
+        "wall_time_s": 6.9
+      },
+      {
+        "name": "test_streaming.fifo_boundaries_backpressure_and_reset",
+        "passed": true,
+        "wall_time_s": 11.0
+      },
+      {
+        "name": "test_streaming.host_waits_for_stream_enable",
+        "passed": true,
+        "wall_time_s": 1.2
+      },
+      {
+        "name": "test_streaming.simultaneous_fifo_operations",
+        "passed": true,
+        "wall_time_s": 1.9
+      },
+      {
+        "name": "test_streaming.multibyte_spi_all_modes",
+        "passed": true,
+        "wall_time_s": 101.8
+      },
+      {
+        "name": "test_streaming.streaming_uart_transmit_and_receive",
+        "passed": true,
+        "wall_time_s": 64.8
+      },
+      {
+        "name": "test_streaming.uart_receive_back_to_back_and_false_start",
+        "passed": true,
+        "wall_time_s": 29.2
+      },
+      {
+        "name": "test_streaming.multibyte_i2c_write_and_read",
+        "passed": true,
+        "wall_time_s": 107.8
+      },
+      {
+        "name": "test_streaming.streaming_i2c_nack_and_read_timeout",
+        "passed": true,
+        "wall_time_s": 13.0
+      },
+      {
+        "name": "test_streaming.timestamp_capture_and_fault_demo",
+        "passed": true,
+        "wall_time_s": 3.5
+      },
+      {
+        "name": "test_streaming.malformed_stream_instructions",
+        "passed": true,
+        "wall_time_s": 0.6
+      }
+    ]
+  },
+  "previous_revision": {
+    "title": "Tiny Tapeout CI: gds, precheck and gl_test on main @ 4187ccd",
+    "date": "2026-09-16",
+    "workflow_run": "https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35032646298",
+    "jobs": {
+      "gds": "success (tt-gds-action@ihp-cmos5l, LibreLane 3.1.0.dev3, IHP-Open-PDK 2bbec755)",
+      "precheck": "passed: 0 errors among 0 error types, 33 checks (precheck DRC disabled by the TT flow)",
+      "gl_test": "TESTS=10 PASS=10 FAIL=0 SKIP=0 on the CI gate-level netlist (zero-delay functional cell models), 100,333,200 ns simulated, 1791 s wall",
+      "viewer": "failure: GitHub Pages not enabled on the private repository (deploy-pages 404); no effect on the design"
+    },
+    "notes": [
+      "The `sdf` workflow was added afterwards and re-run manually against this gds run; its results are recorded in reports/sdf-tests.json."
+    ]
+  }
 }

@@ -198,6 +198,6 @@
   "caveats": [
     "Generic fallback SDC (PNR_SDC_FILE unset), as in the official TT flow.",
     "IR drop without VSRC_LOC_FILES; informational only.",
-    "CI gds/precheck/gl_test/sdf for this revision: see the run linked from reports/ci-gds-run.json once complete."
+    "CI on this revision: gds/precheck/gl_test/viewer success (run 35117387247), SDF 60/60 (run 35134937170); see reports/ci-gds-run.json."
   ]
 }
