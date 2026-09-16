@@ -3,16 +3,21 @@
 Icarus Verilog does not implement the delayed-signal outputs of $setuphold and
 $recrem (the trailing delayed_* arguments), and leaves those nets undriven. This
 keeps every specify block, path delay, timing check and notifier so that
-$sdf_annotate can apply IOPATH delays and SETUP/HOLD/RECOVERY/REMOVAL/WIDTH
-limits, but drops the delayed-net arguments from $setuphold/$recrem and connects
-each delayed_* net directly to its input pin. Violations still drive the
-notifier and corrupt the flip-flop output to X, as in the upstream model.
+$sdf_annotate can apply IOPATH delays, but drops the delayed-net arguments from
+$setuphold/$recrem and connects each delayed_* net directly to its input pin.
+Note that Icarus parses but does not enforce timing checks, so SETUP/HOLD limits
+never fire and the notifier never corrupts a flip-flop output; only the path
+delays take effect (verified in reports/sdf-tests.json).
 
 Icarus also rejects `ifnone` on edge-sensitive paths ("sorry: ifnone with an
 edge-sensitive path is not supported") and would drop them, leaving those arcs
 with zero delay. The `ifnone` keyword is removed so the path becomes
 unconditional; the SDF written by OpenSTA carries an unconditional IOPATH for
 every such arc next to its COND variants, so the arc is still annotated.
+
+The upstream `timescale 1ns/10ps` is kept: Icarus applies SDF values in the
+annotated module's time unit and rounds to its precision, so 0.123 ns becomes
+0.12 ns. Changing the unit to 1 ps would misread 0.5 ns as 0.5 ps.
 
 Zero-delay functional copies are made by functional_cells.py instead.
 """

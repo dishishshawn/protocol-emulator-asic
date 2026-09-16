@@ -127,23 +127,35 @@ job fails only because GitHub Pages is not enabled on the private repository.
 
 ## Post-layout gate-level simulation with SDF
 
-`just test-sdf <corner>` compiles the routed, unpowered netlist (`final/nl`)
-with the PDK cell models and back-annotates the OpenSTA SDF for one corner
-through `$sdf_annotate`. Icarus cannot drive the delayed nets of
-`$setuphold`/`$recrem` and rejects `ifnone` on edge-sensitive paths, so
-`tools/timing_cells.py` generates a copy of `sg13cmos5l_stdcell.v` that drops
-the delayed-net arguments, ties each `delayed_*` net to its input, and makes
-`ifnone` paths unconditional (the SDF carries an unconditional IOPATH for every
-arc next to its COND variants). Path delays, SETUP/HOLD/RECOVERY/REMOVAL/WIDTH
-checks and notifiers are kept, so a violation drives the flip-flop UDP output
-to X and the pin-level checks fail. The SDF contains no negative limits. The
-tests already change inputs on the falling clock edge, 50 ns before the next
-rising edge, so the host contract itself is unchanged.
+[Machine-readable evidence](../reports/sdf-tests.json). `just test-sdf <corner>`
+compiles the routed, unpowered netlist (`final/nl`) with the PDK cell models
+and back-annotates the OpenSTA SDF for one corner through `$sdf_annotate`.
+`tools/timing_cells.py` generates an Icarus-compatible copy of
+`sg13cmos5l_stdcell.v`: it drops the delayed-net arguments of
+`$setuphold`/`$recrem` that Icarus cannot drive, ties each `delayed_*` net to
+its input, and makes `ifnone` paths unconditional (the SDF carries an
+unconditional IOPATH for every such arc). Path delays are kept and annotated;
+the tests already change inputs on the falling clock edge, so the host
+contract is unchanged.
 
-A single-test smoke run at the slow corner passes with no dropped paths. The
-full ten-test regression at the slow, fast and typical corners runs in the
-`sdf` GitHub workflow after each `gds` build (and locally with
-`just test-sdf`); results are recorded in `reports/sdf-tests.json`.
+| Corner | Local (this laptop) | GitHub `sdf` workflow |
+| --- | --- | --- |
+| nom_slow_1p08V_125C | 10/10 pass | 10/10 pass |
+| nom_typ_1p20V_25C | 10/10 pass | 10/10 pass |
+| nom_fast_1p32V_m40C | 10/10 pass | 10/10 pass |
+
+Each run simulates the same 100,333,200 ns as the RTL regression. Controls:
+a clock-tree probe shows the annotated slow-corner latency (0.80 ns to a leaf,
+8.0 ns with a 10× SDF), and scaling all path delays 30× makes the
+instruction-fetch test fail, so the delays are applied and can break the design.
+
+**Limitation.** Icarus Verilog parses but does not enforce SDF timing checks:
+setting every SETUP limit to 50 ns changes nothing, and on a one-flop design a
+violated 8 ns setup limit leaves Q at its captured value rather than X. These
+runs therefore show that the routed netlist functions with the extracted path
+delays at every corner; a setup failure would appear only as wrongly captured
+data when a path exceeds the 100 ns period, and hold margins are covered only
+by STA (+0.113 ns worst at the fast corner). STA remains the timing signoff.
 
 ## What remains unverified
 
@@ -153,7 +165,7 @@ The I²C peer models wired-AND logic, not analog pull-up behavior. The I²C prog
 is a single-controller write demonstration and does not establish complete
 multi-controller or electrical compliance.
 
-The next physical milestone is the SDF-timed regression at all three corners. Future functional work includes input streaming, receive FIFOs,
+The physical evidence is now complete for this design revision; rerun `just harden`, `just test-sdf` and the `gds` workflow after RTL changes. Future functional work includes input streaming, receive FIFOs,
 I²C reads/repeated START, UART receive and fault-injection/capture demonstrations.
 
 ## References

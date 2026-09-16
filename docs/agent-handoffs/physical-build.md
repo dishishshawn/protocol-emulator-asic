@@ -31,10 +31,12 @@ Resolve the tile-allocation gap, establish a reproducible local place-and-route 
 - Ran: `tools/harden.sh` (rootless mode) — Flow complete, exit 0, 0:50:15. 12,309 cells, 27.9% utilization, setup WS +57.18 ns (slow), hold WS +0.113 ns (fast), route DRC 0, Magic DRC 0, LVS 0 errors, antenna 0. Archived in `build/run-rootless/` (gitignored).
 - Ran: `docker run ghcr.io/librelane/librelane:3.1.0.dev3` tool versions — identical to the flake (OpenROAD dcf36133, Yosys 0.66, KLayout 0.30.9, Magic 8.3.674, Netgen 1.5.320).
 - Ran: `tools/harden.sh` (Docker mode) — Flow complete, exit 0; all 193 metrics equal to the rootless run, netlist/DEF byte-identical, GDS geometry identical by KLayout LayoutDiff. Archived in `build/run-docker/`.
-- Not run: gate-level SDF simulation, `precheck`, `gl_test`, KLayout DRC (disabled by the TT template).
+- Ran: `just test-sdf` at all three corners locally and in the `sdf` workflow (run 35043986083): 60/60 passes; negative controls in `reports/sdf-tests.json`. Icarus does not enforce SDF timing checks (documented).
+- Ran: `gds` workflow 35032646298 on main: gds, precheck (0 errors), gl_test (10/10) pass; viewer published at https://dishishshawn.github.io/protocol-emulator-asic/ after enabling Pages.
+- Not run: KLayout DRC (disabled by the TT template); formal; FPGA; silicon.
 
 ## Risks, open questions, and next owner
 - If 8×4 is offered later, only `info.yaml` changes; the flow is unchanged.
 - LibreLane 3.1.0.dev3 bug: OPENROAD_THREADS unset becomes `-threads None` (single-threaded); harden.sh pins it. Worth an upstream issue.
 - 2,276 hold-fix delay cells (18% of cells) come from the template's 0.1 ns hold margin; harmless at this utilization.
-- Next owner: user decides on committing; then Astra or Fable for gate-level SDF regression and precheck.
+- Next owner: feature work (FIFOs, capture path, protocol completeness) per docs/roadmap.md.

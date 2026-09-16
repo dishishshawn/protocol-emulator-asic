@@ -1,0 +1,370 @@
+{
+  "title": "Post-layout gate-level regression with SDF timing (routed netlist, three STA corners)",
+  "date": "2026-09-16",
+  "method": "tools/timing_cells.py + $sdf_annotate in Icarus Verilog 12.0; routed netlist final/nl from the Docker run; SDF from OpenSTA post-PnR (build/run-docker/final/sdf). Ten pin-level cocotb tests per corner, unchanged from RTL.",
+  "netlist_sha256": "8d1a5d177eb3c028737724fa4c4c7a4c247c50ad23d8d6c7f1b60a89588ccf04",
+  "sdf_sha256": {
+    "nom_slow_1p08V_125C": "db6c4a1c7a3f3437ad4b16c9e1c326c24dd5c3e52e658aa0a6d2b2b7529a2d43",
+    "nom_fast_1p32V_m40C": "05c1cb187211f57b01a0731a230570ee0aab78dce2d56d7d1ce8319124aa96d1",
+    "nom_typ_1p20V_25C": "9a527f5f2e78b99478883c76aba4743ff698b89ee222f45a2f0541374c433a42"
+  },
+  "local": {
+    "nom_slow_1p08V_125C": {
+      "tests": [
+        {
+          "name": "test_engine.all_uart_bytes",
+          "passed": true,
+          "wall_time_s": 762.0
+        },
+        {
+          "name": "test_engine.random_pin_timing_and_max_delay",
+          "passed": true,
+          "wall_time_s": 883.2
+        },
+        {
+          "name": "test_engine.wait_sample_jump_and_open_drain",
+          "passed": true,
+          "wall_time_s": 1.0
+        },
+        {
+          "name": "test_engine.malformed_programs_fail_closed",
+          "passed": true,
+          "wall_time_s": 17.9
+        },
+        {
+          "name": "test_engine.abort_reset_and_reload",
+          "passed": true,
+          "wall_time_s": 1.6
+        },
+        {
+          "name": "test_engine.writes_while_running_are_ignored",
+          "passed": true,
+          "wall_time_s": 0.5
+        },
+        {
+          "name": "test_protocols.spi_all_modes_and_bit_orders",
+          "passed": true,
+          "wall_time_s": 8091.8
+        },
+        {
+          "name": "test_protocols.i2c_address_data_ack_and_stretching",
+          "passed": true,
+          "wall_time_s": 720.4
+        },
+        {
+          "name": "test_protocols.i2c_nack_timeout_and_contention",
+          "passed": true,
+          "wall_time_s": 45.7
+        },
+        {
+          "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+          "passed": true,
+          "wall_time_s": 31.7
+        }
+      ],
+      "log": "build/sdf-nom_slow_1p08V_125C.log"
+    },
+    "nom_fast_1p32V_m40C": {
+      "tests": [
+        {
+          "name": "test_engine.all_uart_bytes",
+          "passed": true,
+          "wall_time_s": 758.9
+        },
+        {
+          "name": "test_engine.random_pin_timing_and_max_delay",
+          "passed": true,
+          "wall_time_s": 885.6
+        },
+        {
+          "name": "test_engine.wait_sample_jump_and_open_drain",
+          "passed": true,
+          "wall_time_s": 1.0
+        },
+        {
+          "name": "test_engine.malformed_programs_fail_closed",
+          "passed": true,
+          "wall_time_s": 18.0
+        },
+        {
+          "name": "test_engine.abort_reset_and_reload",
+          "passed": true,
+          "wall_time_s": 1.6
+        },
+        {
+          "name": "test_engine.writes_while_running_are_ignored",
+          "passed": true,
+          "wall_time_s": 0.5
+        },
+        {
+          "name": "test_protocols.spi_all_modes_and_bit_orders",
+          "passed": true,
+          "wall_time_s": 8095.6
+        },
+        {
+          "name": "test_protocols.i2c_address_data_ack_and_stretching",
+          "passed": true,
+          "wall_time_s": 718.2
+        },
+        {
+          "name": "test_protocols.i2c_nack_timeout_and_contention",
+          "passed": true,
+          "wall_time_s": 45.1
+        },
+        {
+          "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+          "passed": true,
+          "wall_time_s": 32.1
+        }
+      ],
+      "log": "build/sdf-nom_fast_1p32V_m40C.log"
+    },
+    "nom_typ_1p20V_25C": {
+      "tests": [
+        {
+          "name": "test_engine.all_uart_bytes",
+          "passed": true,
+          "wall_time_s": 759.1
+        },
+        {
+          "name": "test_engine.random_pin_timing_and_max_delay",
+          "passed": true,
+          "wall_time_s": 887.2
+        },
+        {
+          "name": "test_engine.wait_sample_jump_and_open_drain",
+          "passed": true,
+          "wall_time_s": 1.1
+        },
+        {
+          "name": "test_engine.malformed_programs_fail_closed",
+          "passed": true,
+          "wall_time_s": 18.1
+        },
+        {
+          "name": "test_engine.abort_reset_and_reload",
+          "passed": true,
+          "wall_time_s": 1.6
+        },
+        {
+          "name": "test_engine.writes_while_running_are_ignored",
+          "passed": true,
+          "wall_time_s": 0.5
+        },
+        {
+          "name": "test_protocols.spi_all_modes_and_bit_orders",
+          "passed": true,
+          "wall_time_s": 8097.6
+        },
+        {
+          "name": "test_protocols.i2c_address_data_ack_and_stretching",
+          "passed": true,
+          "wall_time_s": 722.0
+        },
+        {
+          "name": "test_protocols.i2c_nack_timeout_and_contention",
+          "passed": true,
+          "wall_time_s": 47.1
+        },
+        {
+          "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+          "passed": true,
+          "wall_time_s": 39.4
+        }
+      ],
+      "log": "build/sdf-nom_typ_1p20V_25C.log"
+    }
+  },
+  "ci": {
+    "run": "https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35043986083",
+    "gds_run": 35032646298,
+    "results": {
+      "nom_slow_1p08V_125C": [
+        {
+          "name": "test_engine.all_uart_bytes",
+          "passed": true,
+          "wall_time_s": 323.8
+        },
+        {
+          "name": "test_engine.random_pin_timing_and_max_delay",
+          "passed": true,
+          "wall_time_s": 296.2
+        },
+        {
+          "name": "test_engine.wait_sample_jump_and_open_drain",
+          "passed": true,
+          "wall_time_s": 0.5
+        },
+        {
+          "name": "test_engine.malformed_programs_fail_closed",
+          "passed": true,
+          "wall_time_s": 7.8
+        },
+        {
+          "name": "test_engine.abort_reset_and_reload",
+          "passed": true,
+          "wall_time_s": 0.7
+        },
+        {
+          "name": "test_engine.writes_while_running_are_ignored",
+          "passed": true,
+          "wall_time_s": 0.2
+        },
+        {
+          "name": "test_protocols.spi_all_modes_and_bit_orders",
+          "passed": true,
+          "wall_time_s": 506.5
+        },
+        {
+          "name": "test_protocols.i2c_address_data_ack_and_stretching",
+          "passed": true,
+          "wall_time_s": 183.8
+        },
+        {
+          "name": "test_protocols.i2c_nack_timeout_and_contention",
+          "passed": true,
+          "wall_time_s": 18.5
+        },
+        {
+          "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+          "passed": true,
+          "wall_time_s": 10.1
+        }
+      ],
+      "nom_fast_1p32V_m40C": [
+        {
+          "name": "test_engine.all_uart_bytes",
+          "passed": true,
+          "wall_time_s": 240.2
+        },
+        {
+          "name": "test_engine.random_pin_timing_and_max_delay",
+          "passed": true,
+          "wall_time_s": 194.2
+        },
+        {
+          "name": "test_engine.wait_sample_jump_and_open_drain",
+          "passed": true,
+          "wall_time_s": 0.3
+        },
+        {
+          "name": "test_engine.malformed_programs_fail_closed",
+          "passed": true,
+          "wall_time_s": 5.2
+        },
+        {
+          "name": "test_engine.abort_reset_and_reload",
+          "passed": true,
+          "wall_time_s": 0.5
+        },
+        {
+          "name": "test_engine.writes_while_running_are_ignored",
+          "passed": true,
+          "wall_time_s": 0.1
+        },
+        {
+          "name": "test_protocols.spi_all_modes_and_bit_orders",
+          "passed": true,
+          "wall_time_s": 441.6
+        },
+        {
+          "name": "test_protocols.i2c_address_data_ack_and_stretching",
+          "passed": true,
+          "wall_time_s": 133.1
+        },
+        {
+          "name": "test_protocols.i2c_nack_timeout_and_contention",
+          "passed": true,
+          "wall_time_s": 13.1
+        },
+        {
+          "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+          "passed": true,
+          "wall_time_s": 6.7
+        }
+      ],
+      "nom_typ_1p20V_25C": [
+        {
+          "name": "test_engine.all_uart_bytes",
+          "passed": true,
+          "wall_time_s": 288.2
+        },
+        {
+          "name": "test_engine.random_pin_timing_and_max_delay",
+          "passed": true,
+          "wall_time_s": 270.7
+        },
+        {
+          "name": "test_engine.wait_sample_jump_and_open_drain",
+          "passed": true,
+          "wall_time_s": 0.4
+        },
+        {
+          "name": "test_engine.malformed_programs_fail_closed",
+          "passed": true,
+          "wall_time_s": 7.0
+        },
+        {
+          "name": "test_engine.abort_reset_and_reload",
+          "passed": true,
+          "wall_time_s": 0.6
+        },
+        {
+          "name": "test_engine.writes_while_running_are_ignored",
+          "passed": true,
+          "wall_time_s": 0.2
+        },
+        {
+          "name": "test_protocols.spi_all_modes_and_bit_orders",
+          "passed": true,
+          "wall_time_s": 437.2
+        },
+        {
+          "name": "test_protocols.i2c_address_data_ack_and_stretching",
+          "passed": true,
+          "wall_time_s": 156.0
+        },
+        {
+          "name": "test_protocols.i2c_nack_timeout_and_contention",
+          "passed": true,
+          "wall_time_s": 16.0
+        },
+        {
+          "name": "test_protocols.data_instruction_bounds_and_wait_timeout",
+          "passed": true,
+          "wall_time_s": 9.3
+        }
+      ]
+    },
+    "note": "CI used the GDS_logs artifact of gds run 35032646298; all 193 metrics and the GDS geometry of that run equal the local builds."
+  },
+  "negative_controls": [
+    {
+      "control": "IOPATH/INTERCONNECT delays x30 at the slow corner, test data_instruction_bounds_and_wait_timeout",
+      "result": "FAIL (AssertionError: assert 0 == 30): annotated path delays are applied and break the instruction fetch, as expected"
+    },
+    {
+      "control": "IOPATH/INTERCONNECT delays x10 and x30, test writes_while_running_are_ignored",
+      "result": "PASS: this short test only exercises paths that still fit in 100 ns at x30"
+    },
+    {
+      "control": "clock-tree probe",
+      "result": "clknet_0 +0.25 ns, leaf +0.80 ns with the real slow-corner SDF; +2.53 ns and +8.00 ns with x10"
+    },
+    {
+      "control": "all SETUP limits set to 50 ns",
+      "result": "PASS: Icarus parses but does not enforce $setup/$hold/$setuphold/$recrem/$width; confirmed on a one-flop design where a violated 8 ns SETUP limit leaves Q=1 with no X"
+    }
+  ],
+  "what_this_shows": "The routed netlist behaves identically to RTL with the extracted, corner-specific path delays applied and the tests' host timing (inputs change on the falling edge). Setup failures would appear as wrong captured data when a path exceeds the period; STA reports 57 ns of setup margin, consistent with no failures.",
+  "limitations": [
+    "Icarus Verilog ignores SDF timing checks, so setup/hold limits and notifier-driven X are not exercised; hold margins are covered only by STA (+0.113 ns worst at the fast corner).",
+    "INTERCONNECT delays are annotated by Icarus only partially; STA remains the signoff for timing.",
+    "Zero-delay UDP flip-flop models; no metastability or analog effects."
+  ],
+  "tools": {
+    "iverilog": "12.0",
+    "cocotb": "2.0.1",
+    "python": "3.12"
+  }
+}

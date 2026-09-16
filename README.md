@@ -63,7 +63,7 @@ just setup-physical
 just harden            # tt_tool.py --create-user-config, then --harden (Docker)
 ```
 
-`just test-sdf <corner> [run-dir]` then runs the ten pin-level tests on the routed netlist with SDF back-annotation from one STA corner (`nom_slow_1p08V_125C`, `nom_fast_1p32V_m40C`, `nom_typ_1p20V_25C`). `tools/timing_cells.py` makes an Icarus-compatible copy of the cell models that keeps path delays and timing checks; violations corrupt flip-flop outputs to X and fail the tests.
+`just test-sdf <corner> [run-dir]` then runs the ten pin-level tests on the routed netlist with SDF back-annotation from one STA corner (`nom_slow_1p08V_125C`, `nom_fast_1p32V_m40C`, `nom_typ_1p20V_25C`). `tools/timing_cells.py` makes an Icarus-compatible copy of the cell models that keeps the path delays. Icarus does not enforce SDF setup/hold checks, so this shows the routed netlist functions with extracted delays; STA remains the timing signoff. All three corners pass locally and in the `sdf` GitHub workflow ([evidence](reports/sdf-tests.json)).
 
 Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/metrics.json`, DRC and LVS reports and a PNG render. A full run takes about 50 minutes on 8 cores, most of it single-threaded Magic DRC. `tools/harden.sh` pins OpenROAD to the machine's core count because LibreLane 3.1.0.dev3 otherwise runs it single-threaded.
 
