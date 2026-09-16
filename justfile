@@ -16,6 +16,15 @@ synth:
     mkdir -p build
     yosys -Q -T -p 'read_verilog src/project.v src/engine.v; synth -top tt_um_dishishshawn_protocol_emulator; check -assert; stat' > build/synthesis.log
 
+capture-demo:
+    mkdir -p build
+    PATH="{{justfile_directory()}}/.venv/bin:$PATH" DEMO_REPORT="{{justfile_directory()}}/build/fault-demo.json" make -C test COCOTB_TEST_MODULES=test_streaming COCOTB_TEST_FILTER=timestamp_capture_and_fault_demo
+
+stream-demo:
+    uv run --python .venv/bin/python tools/streaming.py spi-stream.bin --protocol spi --count 32
+    uv run --python .venv/bin/python tools/streaming.py uart-rx.bin --protocol uart-rx --count 16
+    uv run --python .venv/bin/python tools/streaming.py i2c-read.bin --protocol i2c-read --count 8
+
 map pdk:
     uv run --python .venv/bin/python tools/synth_cmos5l.py --pdk "{{pdk}}"
 

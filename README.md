@@ -2,16 +2,22 @@
 
 A simulation-first entry for the [Jane Street ASIC competition](https://blog.janestreet.com/protocol-emulator-asic-competition/), due **January 18, 2027**. This repository belongs to [dishishshawn](https://github.com/dishishshawn/protocol-emulator-asic) and is private during development; the competition submission must be open source.
 
-The chip executes firmware that drives, samples and shifts data through five bidirectional lanes. UART, SPI and I²C are programs using the same engine. The working direction is a protocol exerciser with precise timing, controlled fault injection and eventual timestamped capture.
+The chip executes firmware that drives, samples and shifts data through five bidirectional lanes. UART, SPI and I²C are programs using the same engine. Host FIFOs support streaming transfers; timestamped capture records a target's response to precisely timed protocol faults.
 
 ## Current milestone
 
-- 64 × 32-bit writable instruction store, byte transmit/receive registers, counted loops and input-dependent branches.
-- UART 8N1 transmit; SPI full-duplex byte transfer in all four modes and both bit orders.
-- I²C single-controller address + data write, ACK/NACK, bounded clock stretching and detection of transmitted-bit contention.
-- All ten regression tests pass in RTL and again on the CMOS5L mapped netlist, including independent pin-level SPI and wired-AND I²C peers. GitHub RTL CI is green.
-- CMOS5L mapping: **7,963 cells, 183,441.9636 µm² (0.18344 mm²)**, typical 1.2 V / 25 °C library, pre-layout.
-- **First complete layout** (LibreLane 3.1.0.dev3, 6×4 tiles, 10 MHz): 12,309 cells excluding fill, 27.9% core utilization, +57.2 ns setup slack at the slow corner, +0.11 ns hold slack at the fast corner, 0 routing DRC, 0 Magic DRC, LVS clean, 0 antenna violations. See [layout evidence](reports/cmos5l-layout.json).
+- 64 × 32-bit writable instruction store, byte registers, independent bit/byte loops and input-dependent branches.
+- Eight-byte TX and RX FIFOs, explicit backpressure, and an eight-entry timestamped input capture FIFO.
+- Multi-byte UART 8N1 transmit/receive; SPI full-duplex transfers in all four modes and both bit orders.
+- I²C single-controller writes and reads, ACK/NACK, bounded clock stretching and transmitted-bit contention detection. Repeated START remains future work.
+- Twenty RTL regressions pass: the original ten plus ten streaming, framing, queue, capture and malformed-instruction tests, with five streaming mutation controls detected (`tools/check_streaming_mutations.py`). [Streaming interface and limitations](docs/streaming.md).
+- Reproducible UART stop-bit fault demonstration with timestamped modeled-target responses: `just capture-demo`.
+
+The **earlier, pre-streaming design** completed layout on 6×4 tiles at 10 MHz:
+12,309 cells excluding fill, 27.9% utilization, +57.2 ns slow-corner setup slack,
+clean routing/Magic DRC, LVS and antenna checks, Tiny Tapeout precheck and three
+SDF regression corners. Those [baseline results](reports/cmos5l-layout.json)
+do not sign off the new RTL; the streaming physical build is being verified separately.
 
 The allocation is 6×4 Tiny Tapeout tiles, the current competition maximum, with a provisional 10 MHz clock. See [verification](docs/verification.md), [architecture](docs/info.md), [mapped-area evidence](reports/cmos5l-area.json) and [roadmap](docs/roadmap.md).
 
@@ -52,7 +58,7 @@ just test-mapped "$PWD/.pdk"
 
 Mapping produces `build/cmos5l/summary.json`, the full log, cell statistics and `netlist.v`. The script records RTL and library hashes and rejects unmapped logic. Alternate executable locations are supported via `--yosys` and `--abc`. Generic synthesis is also available with `just synth`.
 
-The mapped test uses functional standard-cell models without extracted delays. Full physical design, static timing, DRC/LVS and silicon validation are still ahead.
+The mapped test uses functional standard-cell models without extracted delays. Routed-netlist SDF tests and STA provide separate physical verification; silicon validation remains ahead.
 
 ## Physical build (local)
 
@@ -63,7 +69,7 @@ just setup-physical
 just harden            # tt_tool.py --create-user-config, then --harden (Docker)
 ```
 
-`just test-sdf <corner> [run-dir]` then runs the ten pin-level tests on the routed netlist with SDF back-annotation from one STA corner (`nom_slow_1p08V_125C`, `nom_fast_1p32V_m40C`, `nom_typ_1p20V_25C`). `tools/timing_cells.py` makes an Icarus-compatible copy of the cell models that keeps the path delays. Icarus does not enforce SDF setup/hold checks, so this shows the routed netlist functions with extracted delays; STA remains the timing signoff. All three corners pass locally and in the `sdf` GitHub workflow ([evidence](reports/sdf-tests.json)).
+`just test-sdf <corner> [run-dir]` then runs the pin-level tests on the routed netlist with SDF back-annotation from one STA corner (`nom_slow_1p08V_125C`, `nom_fast_1p32V_m40C`, `nom_typ_1p20V_25C`). `tools/timing_cells.py` makes an Icarus-compatible copy of the cell models that keeps the path delays. Icarus does not enforce SDF setup/hold checks, so this shows the routed netlist functions with extracted delays; STA remains the timing signoff. For the pre-streaming baseline, all three corners passed locally and in the `sdf` GitHub workflow ([evidence](reports/sdf-tests.json)).
 
 Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/metrics.json`, DRC and LVS reports and a PNG render. A full run takes about 50 minutes on 8 cores, most of it single-threaded Magic DRC. `tools/harden.sh` pins OpenROAD to the machine's core count because LibreLane 3.1.0.dev3 otherwise runs it single-threaded.
 
@@ -71,7 +77,7 @@ Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/
 
 Pushes run the RTL regression. The retained official GDS, documentation and FPGA workflows are manually dispatched while the physical flow is being brought up. No competition signup or final submission has been made.
 
-Next: gate-level simulation on the routed netlist and the tt precheck, then host streaming/FIFOs, multi-byte transactions, I²C read/repeated START, UART receive and formal safety/liveness properties. No FPGA is required for the current work.
+Next: physical verification of the streaming design, I²C repeated START, and formal safety/liveness properties. No FPGA is required for the current work.
 
 ## Provenance
 

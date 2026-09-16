@@ -1,0 +1,50 @@
+{
+  "method": "Isolated source copies, deliberate one-bug edits; each must compile and fail its named cocotb assertion.",
+  "sources": {
+    "src/engine.v": "34fcba56d5e08485d2eb27fa440ad8e0016bfabbf9acb088d335b8297c31b237",
+    "tools/streaming.py": "7d9c17dacbec5a556d1232f7e913f73a4c2a805a3fff851348f099cb131ac480",
+    "test/test_streaming.py": "49cb3f5c68a0a7b6e166c4c7e63a9002e01bdba8e375e9e32ee28a12a5d00fe1"
+  },
+  "cases": [
+    {
+      "mutation": "tx_simultaneous_count",
+      "file": "src/engine.v",
+      "before": "2'b01: tx_used <= tx_used - 1'b1;",
+      "after": "2'b01: tx_used <= tx_used - 1'b1;\n                2'b11: tx_used <= tx_used + 1'b1;",
+      "test": "simultaneous_fifo_operations",
+      "detected": true
+    },
+    {
+      "mutation": "rx_simultaneous_count",
+      "file": "src/engine.v",
+      "before": "2'b01: rx_used <= rx_used - 1'b1;",
+      "after": "2'b01: rx_used <= rx_used - 1'b1;\n                2'b11: rx_used <= rx_used + 1'b1;",
+      "test": "simultaneous_fifo_operations",
+      "detected": true
+    },
+    {
+      "mutation": "double_timestamp_rate",
+      "file": "src/engine.v",
+      "before": "timestamp <= timestamp + 1'b1;",
+      "after": "timestamp <= timestamp + 2'd2;",
+      "test": "timestamp_capture_and_fault_demo",
+      "detected": true
+    },
+    {
+      "mutation": "ack_final_i2c_byte",
+      "file": "tools/streaming.py",
+      "before": "w[final] = last_byte(ack_clock)",
+      "after": "w[final] = hold(1)",
+      "test": "multibyte_i2c_write_and_read",
+      "detected": true
+    },
+    {
+      "mutation": "host_skips_readiness",
+      "file": "tools/streaming.py",
+      "before": "        await self.ready()\n",
+      "after": "",
+      "test": "host_waits_for_stream_enable",
+      "detected": true
+    }
+  ]
+}

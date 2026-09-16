@@ -24,9 +24,11 @@ All words use opcode [31:28]. Reserved operand bits are ignored.
 | 9 | CHECK_TX | [2:0] lane | Fault if input differs from the bit emitted by the most recent OUT |
 | A | TRAP | None | Explicit firmware fault, releases lanes |
 | B | PATCH | [27:15] clocks−1, [14:10] mask, [9:5] OE, [4:0] value | Update selected lanes, hold 1–8192 clocks |
+| C | STREAM family | [27:24] subopcode | Enable streaming, FIFO PULL/PUSH, outer byte counter; see [streaming](streaming.md) |
+| D | CAPTURE family | [27:24]=1, [4:0] lane mask | Enable/disable timestamped input-edge capture |
 | F | HALT | None | Stop normally, release lanes |
 
-C–E fault. Lane indices 5–7 fault. Falling or jumping outside the loaded image
+Unused C/D subopcodes and E fault. Lane indices 5–7 fault. Falling or jumping outside the loaded image
 faults; sequential execution cannot wrap past word 63. A bad jump target faults
 on the next instruction-fetch clock. Firmware can ignore reserved bits, but
 software encoders validate all defined fields.
@@ -69,7 +71,7 @@ See `verification.md` for measured results and limitations.
 | ui[7:0] | Host byte data |
 | uio[7] | LOAD strobe input; rising edge captures a byte |
 | uio[6] | RUN input; rising edge starts at word zero; low aborts |
-| uio[5] | REWIND while RUN=0; RX result-page select while RUN=1 and halted |
+| uio[5] | REWIND while RUN=0; legacy RX select when halted; streaming command/page select while RUN=1 |
 | uio[4:0] | Protocol lanes |
 | uo[7:0], normal page | {FAULT, RUNNING, HALTED, SAMPLE[4:0]} |
 | uo[7:0], RX page | Full receive byte |
@@ -89,7 +91,9 @@ for at least four clocks before changing data. There is no ready/ack signal.
    RUN goes low, it becomes REWIND and clears the image.
 
 Empty, partially loaded or overflowed images fail at start. REWIND clears the
-loader error. Loading/rewinding is ignored during RUN. Aborting preserves the
+loader error. Program loading/rewinding is ignored during RUN. Programs that
+opt into streaming reuse LOAD/REWIND for FIFO data and commands; see
+[the streaming interface](streaming.md). Aborting preserves the
 image; reset erases its validity. FAULT/HALTED clear when synchronized RUN goes
 low or the design is deselected. Reselecting with RUN already high does not
 restart; toggle RUN low then high.
@@ -105,10 +109,13 @@ restart; toggle RUN low then high.
   STOP then faults. Bounded WAIT handles clock stretching; CHECK_TX detects
   contention while transmitting. Timeout or contention releases pins immediately,
   without promising a STOP on an externally held bus. Both ACK samples can be
-  inspected during execution only through the last SAMPLE; there is no trace FIFO.
+  inspected during execution through the last SAMPLE. The optional capture FIFO
+  records selected input transitions, with its own capacity and overflow flag.
 
-The I²C demonstration does not implement reads, repeated START, retries, bus
-recovery or full multi-controller clock synchronization. It is not a general
+The original one-byte demonstrations remain available. Streaming programs add
+multi-byte UART TX/RX, SPI transfers, and I²C writes/reads. I²C does not yet
+implement repeated START, retries, bus recovery or full multi-controller clock
+synchronization. It is not a general
 replacement for a standards-compliant I²C controller yet.
 
 # External hardware

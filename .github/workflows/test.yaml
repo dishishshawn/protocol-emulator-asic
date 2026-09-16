@@ -14,7 +14,7 @@ jobs:
           uv venv --python 3.12 .venv
           uv pip install --python .venv/bin/python -r test/requirements.txt
       - name: Run tests
-        run: PATH="$PWD/.venv/bin:$PATH" make -C test
+        run: PATH="$PWD/.venv/bin:$PATH" DEMO_REPORT="$PWD/test/fault-demo.json" make -C test
       - name: Test summary
         uses: test-summary/action@v2.4
         with:
@@ -26,4 +26,5 @@ jobs:
           name: simulation-results
           path: |
             test/results.xml
+            test/fault-demo.json
             test/tb.fst

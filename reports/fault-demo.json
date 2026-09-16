@@ -1,0 +1,58 @@
+[
+  {
+    "faulted": false,
+    "received_byte": 255,
+    "stop_bit": 1,
+    "events": [
+      {
+        "cycle": 37,
+        "pins": 0
+      },
+      {
+        "cycle": 69,
+        "pins": 1
+      },
+      {
+        "cycle": 444,
+        "pins": 17
+      },
+      {
+        "cycle": 455,
+        "pins": 1
+      }
+    ],
+    "response_delay_from_stop_sample": 103
+  },
+  {
+    "faulted": true,
+    "received_byte": 255,
+    "stop_bit": 0,
+    "events": [
+      {
+        "cycle": 37,
+        "pins": 0
+      },
+      {
+        "cycle": 69,
+        "pins": 1
+      },
+      {
+        "cycle": 325,
+        "pins": 0
+      },
+      {
+        "cycle": 357,
+        "pins": 1
+      },
+      {
+        "cycle": 400,
+        "pins": 17
+      },
+      {
+        "cycle": 411,
+        "pins": 1
+      }
+    ],
+    "response_delay_from_stop_sample": 59
+  }
+]

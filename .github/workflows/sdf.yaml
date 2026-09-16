@@ -31,7 +31,17 @@ jobs:
       matrix:
         corner: [nom_slow_1p08V_125C, nom_fast_1p32V_m40C, nom_typ_1p20V_25C]
     steps:
+      - name: Resolve the source revision of the GDS artifact
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id }}
+        run: |
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq .head_sha)
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ steps.source.outputs.sha }}
       - name: Download routed netlist and SDF from the gds run
         env:
           GH_TOKEN: ${{ github.token }}
