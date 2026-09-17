@@ -1,0 +1,27 @@
+[tasks]
+bmc
+prove
+cover
+
+[options]
+bmc: mode bmc
+bmc: depth 40
+prove: mode prove
+prove: depth 24
+cover: mode cover
+cover: depth 60
+multiclock off
+
+[engines]
+bmc: smtbmc yices
+prove: smtbmc yices
+cover: smtbmc yices
+
+[script]
+read_verilog -formal engine.v
+prep -top protocol_engine
+memory_map
+
+[files]
+engine.v ../src/engine.v
+properties.vh

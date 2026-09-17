@@ -158,12 +158,70 @@ def i2c_read(address, count, half_period=50, timeout=2000):
     return _i2c_finish(w, nacks, h, timeout)
 
 
-def fault_demo(faulted=False, cycles_per_bit=32):
-    """Send FF with a normal or low stop bit; capture UART echo and response lane 4."""
-    w = [stream(1), capture(17)] + uart_tx(255, cycles_per_bit)[:-1]
-    if faulted:
-        w[-1] = drive(0, 1, cycles_per_bit)
-    w += [drive(1, 1, cycles_per_bit), wait_pin(4, 1, 1000),
+def i2c_transaction(write_count, read_count, half_period=50, timeout=2000):
+    """Write then read in one transaction, joined by a repeated START.
+
+    The host pushes write_count bytes: address+W first, then the payload
+    (typically a register pointer), and finally address+R. The repeated START
+    precedes that last pushed byte, so the firmware never embeds an address.
+    read_count bytes are then received, ACKed except the final NACK, then STOP.
+    """
+    _i2c_parameters(0, half_period, timeout)
+    if not 2 <= write_count <= 255 or not 1 <= read_count <= 255:
+        raise ValueError("write_count 2..255 (address+W .. address+R), read_count 1..255")
+    h = half_period
+    w = [stream(write_count)] + _i2c_start(h, timeout)
+    byte = len(w)
+    w += [PULL]
+    restart = len(w)
+    w += [0]  # LAST_BYTE: repeated START before address+R
+    send = len(w)
+    nacks = [_i2c_send(w, h, timeout)]
+    w += [byte_loop(byte), stream(read_count)]
+    read_byte = len(w)
+    w += [load_byte(0), patch(2, 0, 0, h)]
+    bit = len(w)
+    w += [patch(1, 0, 0, 4), wait_pin(0, 1, timeout), hold(h), shift_in(1),
+          patch(1, 0, 1, h), djnz(bit), PUSH]
+    final = len(w)
+    w += [0, patch(2, 0, 2, h)]
+    ack_clock = len(w)
+    w += [patch(1, 0, 0, 4), wait_pin(0, 1, timeout), hold(h),
+          patch(1, 0, 1, h), patch(2, 0, 0, h), byte_loop(read_byte)]
+    w[final] = last_byte(ack_clock)
+    _i2c_finish(w, nacks, h, timeout)
+    # Repeated START: SDA released while SCL low, SCL released and checked
+    # high (stretch), setup hold, SDA low while SCL high, then SCL low.
+    w[restart] = last_byte(len(w))
+    w += [patch(2, 0, 0, h), patch(1, 0, 0, 4), wait_pin(0, 1, timeout),
+          wait_pin(1, 1, timeout), hold(h), patch(2, 0, 2, h), patch(1, 0, 1, h),
+          jump(send)]
+    encode(w)
+    return w
+
+
+def fault_demo(faulted=False, cycles_per_bit=32, byte=255, fault_clocks=None):
+    """Send a byte with a normal or shortened stop bit; capture UART echo and lane 4.
+
+    fault_clocks drives the stop bit low for exactly that many clocks (0 is a
+    clean frame; more than a bit period extends the fault past the frame).
+    faulted=True is the original demo: the whole stop bit low. The firmware
+    only starts watching lane 4 after the fault ends, and the modeled target
+    answers a framing error 59 clocks after the mid-stop sample, so faults are
+    limited to two bit periods; longer ones would miss the response and fault.
+    """
+    if fault_clocks is None:
+        fault_clocks = cycles_per_bit if faulted else 0
+    if not 0 <= fault_clocks <= 2 * cycles_per_bit:
+        raise ValueError("fault_clocks must be 0..2*cycles_per_bit")
+    w = [stream(1), capture(17)] + uart_tx(byte, cycles_per_bit)[:-2]
+    if fault_clocks == 0:
+        w += [drive(1, 1, cycles_per_bit)]
+    elif fault_clocks < cycles_per_bit:
+        w += [drive(0, 1, fault_clocks), drive(1, 1, cycles_per_bit - fault_clocks)]
+    else:  # long fault: release idle and watch for the response at once
+        w += [drive(0, 1, fault_clocks), drive(1, 1, 1)]
+    w += [drive(1, 1, cycles_per_bit if fault_clocks < cycles_per_bit else 1), wait_pin(4, 1, 1000),
           wait_pin(4, 0, 1000), hold(4), capture(0), HALT]
     return w
 
@@ -236,7 +294,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate streaming protocol firmware")
     parser.add_argument("output", type=Path)
     parser.add_argument("--protocol", required=True,
-                        choices=["spi", "uart-tx", "uart-rx", "i2c-write", "i2c-read", "fault-demo"])
+                        choices=["spi", "uart-tx", "uart-rx", "i2c-write", "i2c-read",
+                                 "i2c-transaction", "fault-demo"])
     parser.add_argument("--count", type=int, default=1)
     parser.add_argument("--cycles", type=int, default=87)
     parser.add_argument("--mode", type=int, default=0)
@@ -244,6 +303,7 @@ if __name__ == "__main__":
     parser.add_argument("--address", type=lambda s: int(s, 0), default=0x50)
     parser.add_argument("--half-period", type=int, default=50)
     parser.add_argument("--timeout", type=int, default=2000)
+    parser.add_argument("--write-count", type=int, default=2)
     parser.add_argument("--faulted", action="store_true")
     args = parser.parse_args()
     if args.protocol == "spi":
@@ -256,6 +316,8 @@ if __name__ == "__main__":
         words = i2c_write_stream(args.address, args.count, args.half_period, args.timeout)
     elif args.protocol == "i2c-read":
         words = i2c_read(args.address, args.count, args.half_period, args.timeout)
+    elif args.protocol == "i2c-transaction":
+        words = i2c_transaction(args.write_count, args.count, args.half_period, args.timeout)
     else:
         words = fault_demo(args.faulted)
     args.output.write_bytes(encode(words))

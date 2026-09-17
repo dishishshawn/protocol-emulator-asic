@@ -1,7 +1,7 @@
 # Streaming and timestamped capture
 
 ## Status
-Done (reviewed and committed; CI gds/sdf on this revision pending)
+Done (reviewed and committed; CI precheck, gl_test 20/20 and SDF 60/60 recorded at e8f25a3)
 
 ## Requested outcome
 Add buffered host transfers, multi-byte protocol programs, UART receive, I²C read,
@@ -35,7 +35,7 @@ and a reproducible timed-fault/target-response capture demonstration.
 - Ran: generic Yosys synth — 5,649 → 7,058 cells (+25%); the 6×4 block was 27.9% utilized before, so area is not a concern.
 - Fixed: README/roadmap said eighteen regressions; it is twenty.
 - Ran: `tools/harden.sh` on the new RTL — Flow complete; 18,776 cells, 34.1% utilization, setup WS +57.45 ns, hold WS +0.122 ns, route DRC 0, Magic DRC 0, LVS 0, antenna 0 (`reports/cmos5l-layout.json`). `gds` run 35117387247 and the `sdf` workflow are running on GitHub.
-- Not run: `just test-mapped` on the new RTL; SDF corners on the new layout (CI will do these).
+- CI on this revision: precheck passed, gl_test 20/20, SDF three corners 60/60 (`reports/ci-gds-run.json`, `reports/sdf-tests.json`). `just test-mapped` was not run locally on the new RTL.
 
 ## Risks, open questions, and next owner
 - Host service can stall the engine only at explicit FIFO instructions; firmware

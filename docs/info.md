@@ -113,10 +113,10 @@ restart; toggle RUN low then high.
   records selected input transitions, with its own capacity and overflow flag.
 
 The original one-byte demonstrations remain available. Streaming programs add
-multi-byte UART TX/RX, SPI transfers, and I²C writes/reads. I²C does not yet
-implement repeated START, retries, bus recovery or full multi-controller clock
-synchronization. It is not a general
-replacement for a standards-compliant I²C controller yet.
+multi-byte UART TX/RX, SPI transfers, I²C writes/reads, and a write-then-read
+register transaction joined by a repeated START. I²C does not yet implement
+retries, bus recovery or full multi-controller clock synchronization. It is not
+a general replacement for a standards-compliant I²C controller yet.
 
 # External hardware
 

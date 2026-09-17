@@ -1,0 +1,124 @@
+{
+  "method": "SymbiYosys with smtbmc/Yices on src/engine.v with formal/properties.vh included under FORMAL; run by tools/formal.sh.",
+  "sources": {
+    "src/engine.v": "596bc64d3575ae9f9c38fb5cf9593fa6a33c03a3f1a5e522c35b7a1cb3132d53",
+    "formal/properties.vh": "f74e8df5a3ae2dc576e0d5b0743f8158179bca9a83de1c6d5f2691e3e18d0c8c",
+    "formal/engine.sby": "d9843f9b46c6eb32026d916f88f329d08a54cbc15d624878890cf4aaa5862f4f"
+  },
+  "tools": {
+    "yosys": "0.66",
+    "yices": "2.7.0"
+  },
+  "depths": {
+    "bmc": 40,
+    "prove": 24,
+    "cover": 60
+  },
+  "tasks": {
+    "bmc": {
+      "status": "PASS",
+      "elapsed_s": 327
+    },
+    "prove": {
+      "status": "PASS",
+      "elapsed_s": 13,
+      "induction_step": 21
+    },
+    "cover": {
+      "status": "PASS",
+      "elapsed_s": 6,
+      "reached": [
+        [
+          "properties.vh:127.5-127.19",
+          22
+        ],
+        [
+          "properties.vh:128.5-128.19",
+          22
+        ],
+        [
+          "properties.vh:129.5-129.24",
+          23
+        ],
+        [
+          "properties.vh:130.5-130.29",
+          13
+        ],
+        [
+          "properties.vh:131.5-131.54",
+          13
+        ],
+        [
+          "properties.vh:132.5-132.39",
+          28
+        ]
+      ],
+      "unreached": []
+    }
+  },
+  "negative_controls": {
+    "method": "One-bug edits to an isolated copy of src/engine.v; formal/properties.vh unchanged; sby bmc depth 40 must FAIL.",
+    "cases": [
+      {
+        "mutation": "fault_keeps_outputs",
+        "before": "            fault <= 1;\n            out_enable <= 0;\n        end\n    endtask",
+        "after": "            fault <= 1;\n        end\n    endtask",
+        "expected_property": "S1 fail-closed",
+        "detected": true,
+        "failed_assertions": [
+          "protocol_engine._witness_.check_assert_properties_vh_16_356 at properties.vh:16.5-16.40 step 22"
+        ]
+      },
+      {
+        "mutation": "tx_count_on_push_and_pop",
+        "before": "2'b01: tx_used <= tx_used - 1'b1;",
+        "after": "2'b01: tx_used <= tx_used - 1'b1;\n                2'b11: tx_used <= tx_used + 1'b1;",
+        "expected_property": "S4 occupancy",
+        "detected": true,
+        "failed_assertions": [
+          "protocol_engine._witness_.check_assert_properties_vh_26_396 at properties.vh:26.5-26.81 step 32"
+        ]
+      },
+      {
+        "mutation": "wait_timeout_off_by_one",
+        "before": "if (wait_elapsed == instruction[27:10] - 1'b1)",
+        "after": "if (wait_elapsed == instruction[27:10])",
+        "expected_property": "S7 bounded WAIT",
+        "detected": true,
+        "failed_assertions": [
+          "protocol_engine._witness_.check_assert_properties_vh_43_421 at properties.vh:43.5-45.76 step 13"
+        ]
+      },
+      {
+        "mutation": "pull_without_stream",
+        "before": "if (!stream_enabled) fail_closed();\n                                    else if (tx_used != 0) begin",
+        "after": "if (tx_used != 0) begin",
+        "expected_property": "S5 streaming gate",
+        "detected": true,
+        "failed_assertions": [
+          "protocol_engine._witness_.check_assert_properties_vh_33_413 at properties.vh:33.9-33.23 step 13"
+        ]
+      },
+      {
+        "mutation": "rx_fifo_writes_wrong_slot",
+        "before": "if (rx_push) begin rx_fifo[rx_wr] <= rx_shift;",
+        "after": "if (rx_push) begin rx_fifo[rx_wr + 1'b1] <= rx_shift;",
+        "expected_property": "D2 RX integrity",
+        "detected": true,
+        "failed_assertions": [
+          "protocol_engine._witness_.check_assert_properties_vh_100_521 at properties.vh:100.21-100.62 step 22"
+        ]
+      },
+      {
+        "mutation": "host_command_faults_engine",
+        "before": "            end else if (running) begin\n                if (delay_left != 0) begin",
+        "after": "            end else if (running) begin\n                if (command && host_data == 8'h83) fail_closed();\n                else if (delay_left != 0) begin",
+        "expected_property": "S6 fault provenance",
+        "detected": true,
+        "failed_assertions": [
+          "protocol_engine._witness_.check_assert_properties_vh_37_426 at properties.vh:37.9-38.67 step 23"
+        ]
+      }
+    ]
+  }
+}

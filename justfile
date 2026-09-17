@@ -20,10 +20,16 @@ capture-demo:
     mkdir -p build
     PATH="{{justfile_directory()}}/.venv/bin:$PATH" DEMO_REPORT="{{justfile_directory()}}/build/fault-demo.json" make -C test COCOTB_TEST_MODULES=test_streaming COCOTB_TEST_FILTER=timestamp_capture_and_fault_demo
 
+# Fault-length sweep behind the live demo page: real engine runs, JSON evidence.
+fault-sweep:
+    mkdir -p build
+    PATH="{{justfile_directory()}}/.venv/bin:$PATH" SWEEP_REPORT="{{justfile_directory()}}/build/fault-sweep.json" make -C test COCOTB_TEST_MODULES=test_sweep
+
 stream-demo:
     uv run --python .venv/bin/python tools/streaming.py spi-stream.bin --protocol spi --count 32
     uv run --python .venv/bin/python tools/streaming.py uart-rx.bin --protocol uart-rx --count 16
     uv run --python .venv/bin/python tools/streaming.py i2c-read.bin --protocol i2c-read --count 8
+    uv run --python .venv/bin/python tools/streaming.py i2c-regread.bin --protocol i2c-transaction --write-count 3 --count 4
 
 map pdk:
     uv run --python .venv/bin/python tools/synth_cmos5l.py --pdk "{{pdk}}"
@@ -36,6 +42,10 @@ setup-physical *args:
 
 harden:
     tools/harden.sh
+
+# Formal safety, bounded-wait and FIFO integrity checks (sby via nix-portable).
+formal *tasks:
+    tools/formal.sh {{tasks}}
 
 # Post-layout gate-level regression with SDF timing; corner is an STA corner name.
 test-sdf corner="nom_slow_1p08V_125C" run="build/run-docker":

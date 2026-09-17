@@ -373,4 +373,7 @@ module protocol_engine (
             end
         end
     end
+`ifdef FORMAL
+`include "properties.vh"  // formal/properties.vh, staged by tools/formal.sh
+`endif
 endmodule

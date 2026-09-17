@@ -1,4 +1,4 @@
-# Verification — September 14, 2026 (updated with first layout)
+# Verification — September 17, 2026 (updated with repeated START and formal checks)
 
 ## RTL regression
 
@@ -135,6 +135,71 @@ LVS and antenna locally; in CI, precheck 0 errors, gl_test 20/20 and SDF
 60/60 over three corners ([layout](../reports/cmos5l-layout.json),
 [CI](../reports/ci-gds-run.json), [SDF](../reports/sdf-tests.json)).
 
+## Repeated START (September 17, 2026)
+
+`i2c_transaction` adds the write-then-read register transaction. The
+twenty-first RTL test, `i2c_repeated_start_register_read`, drives a
+register-file target model that counts a START during an open transaction as
+repeated, serves `registers[pointer]` with auto-increment, and records the
+controller's ACK bits. It checks 1-, 7- and 16-byte reads from three pointers at
+4- and 50-clock half periods with and without 13-clock stretching, a write of
+two registers followed by a read-back in the same transaction, an unmatched
+address (STOP then TRAP with no repeated START and no data), and a stretch that
+never ends during the repeated START (bounded-wait fault). The regression is
+21/21 locally (`build/rtl-regression-repstart.log`); a sixth streaming
+mutation control that deletes the repeated START is detected
+([evidence](../reports/streaming-mutations.json)).
+
+## Fault-length sweep (September 17, 2026)
+
+`just fault-sweep` ([evidence](../reports/fault-sweep.json)) runs the stop-bit
+fault demonstration for 20 fault lengths (0–20 clocks in fine steps around the
+receiver's mid-bit sample, then 24–64) and five bytes: 100 engine runs, 50
+accepted frames and 50 framing errors, with the boundary at 17 clocks exactly
+where the receiver samples. Each run is checked as in the capture demo:
+captured events equal the independent model's edge list, constant
+synchronizer offset, an 11-clock response pulse, no overflow. The response
+latency measured from the capture is 103 or 59 clocks in every run. The
+interactive page `docs/fault-sweep.html` embeds this file; the target latencies
+remain simulation parameters, not device measurements.
+
+## Formal properties (September 17, 2026)
+
+[Machine-readable evidence](../reports/formal.json). `just formal` runs
+SymbiYosys (Yosys 0.66, Yices 2.7.0 from the pinned nix-portable store) on the
+engine with `formal/properties.vh` included under `FORMAL`; the RTL used for
+synthesis is unchanged by the include guard. Inputs, including the un-reset
+program memory, are unconstrained beyond an initial reset.
+
+| Task | Result |
+| --- | --- |
+| `bmc`, depth 40 | All assertions hold from reset for 40 clocks |
+| `prove`, depth 24 | Base case and temporal induction pass: the properties hold for every reachable state, unbounded |
+| `cover`, depth 60 | All six reachability targets reached between steps 13 and 28 |
+| Negative controls | Six one-bug engine mutations each fail the named property (`tools/check_formal_mutations.py`) |
+
+Safety (S1–S10): no output enable unless running, fault implies halted, running
+and halted exclusive; every lane released within two synchronized samples of
+RUN low; loader bounds; each queue's occupancy matches its pointers and never
+exceeds eight; streaming instructions fault without STREAM; a fault can only
+follow an executed instruction, a bad image at the RUN edge or running off the
+end, never host traffic; exact DRIVE/PATCH countdown; timestamp wrap is
+recorded; a running program has no partial loader word.
+
+Bounded liveness (S7, L1): a WAIT with a nonzero timeout completes or faults
+within that many clocks, proven as an invariant on the elapsed counter plus its
+per-clock advance. PULL and PUSH stalls are host-controlled and unbounded by
+design, as documented in the streaming interface.
+
+Data integrity (D1–D3): a nondeterministically tagged TX byte, RX byte or
+capture entry stays unchanged in its occupied slot and is delivered exactly to
+the PULL, host head read or capture head that reaches it.
+
+Limits: this proves the RTL against these properties only; the program memory,
+synchronizer inputs and host timing are free, and nothing is proven about the
+firmware or the routed netlist. Equivalence of the gate-level netlist rests on
+the simulation evidence above.
+
 ## Post-layout gate-level simulation with SDF
 
 [Machine-readable evidence](../reports/sdf-tests.json). `just test-sdf <corner>`
@@ -169,14 +234,13 @@ by STA (+0.113 ns worst at the fast corner). STA remains the timing signoff.
 
 ## What remains unverified
 
-No formal proof, FPGA or silicon test has completed. Tests do not model metastability, analog rise time, voltage
+No FPGA or silicon test has completed. Tests do not model metastability, analog rise time, voltage
 compatibility, asynchronous host phase sweeps or reset recovery/removal.
 The I²C peer models wired-AND logic, not analog pull-up behavior. The I²C program
 is a single-controller write demonstration and does not establish complete
 multi-controller or electrical compliance.
 
-The physical evidence is now complete for this design revision; rerun `just harden`, `just test-sdf` and the `gds` workflow after RTL changes. Future functional work includes input streaming, receive FIFOs,
-I²C reads/repeated START, UART receive and fault-injection/capture demonstrations.
+The physical evidence is now complete for this design revision; rerun `just harden`, `just test-sdf` and the `gds` workflow after RTL changes. Future functional work includes I²C bus recovery and multi-controller behavior.
 
 ## References
 

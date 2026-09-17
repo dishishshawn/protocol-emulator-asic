@@ -11,7 +11,8 @@ from test_engine import expect_halt, load, reset, tick
 from test_protocols import I2CPeer
 from program import HALT, SAMPLE, djnz, drive, hold, load_byte, shift_in, shift_out, wait_pin
 from streaming import (Host, PULL, PUSH, byte_loop, capture, fault_demo, i2c_read,
-                       i2c_write_stream, spi_stream, stream, uart_rx, uart_tx_stream)
+                       i2c_transaction, i2c_write_stream, spi_stream, stream, uart_rx,
+                       uart_tx_stream)
 
 
 class Bus:
@@ -501,6 +502,157 @@ async def streaming_i2c_nack_and_read_timeout(d):
     target = ReadTarget([0xFF], stretch=1000)
     b = Bus(d, target, inputs=3)
     await b.finish(fault=True, limit=300)
+    assert await b.host.page(3) == 0
+
+
+class RegisterTarget:
+    """Register-mapped I2C target: pointer write, auto-increment, repeated START.
+
+    Only a START while a transaction is open counts as repeated; a STOP closes
+    the transaction and a fresh START would count as a new one.
+    """
+    def __init__(self, address, registers, stretch=0):
+        self.address = address
+        self.registers = list(registers)
+        self.stretch = stretch
+        self.left = 0
+        self.prev_oe = 0
+        self.prev_scl = self.prev_sda = 1
+        self.low = False
+        self.started = False
+        self.phase = 0
+        self.bits = []
+        self.pointer = 0
+        self.direction = None  # None: expecting address; 0 write; 1 read; 2 not us
+        self.first = False
+        self.serving = False
+        self.starts = self.repeated = self.stops = 0
+        self.bytes = []
+        self.acks = []
+
+    def __call__(self, b):
+        oe, out = int(b.d.uio_oe.value) & 3, int(b.d.uio_out.value) & 3
+        assert not oe & out
+        if self.prev_oe & 1 and not oe & 1:
+            self.left = self.stretch
+        scl = int(not oe & 1 and self.left == 0)
+        self.left = max(0, self.left - 1)
+        sda = int(not oe & 2 and not self.low)
+        if self.prev_sda and not sda and scl and self.prev_scl:
+            if self.started:
+                self.repeated += 1
+            else:
+                self.starts += 1
+            self.started = True
+            self.phase = 0
+            self.bits = []
+            self.direction = None
+            self.serving = False
+            self.low = False
+        if not self.prev_sda and sda and scl and self.prev_scl:
+            self.started = False
+            self.stops += 1
+            self.low = False
+        if self.started and not self.prev_scl and scl:
+            if self.phase < 8:
+                if self.direction != 1:
+                    self.bits.append(sda)
+                self.phase += 1
+            else:
+                if self.direction == 1 and self.serving:
+                    self.acks.append(sda)
+                self.phase = 9
+        if self.started and self.prev_scl and not scl:
+            if self.phase == 9:
+                self.phase = 0
+                if self.direction == 1 and self.serving:
+                    self.pointer += 1
+                    if self.acks[-1]:
+                        self.direction = 2  # controller NACK: release the bus
+            if self.phase == 8:
+                value = sum(v << (7 - i) for i, v in enumerate(self.bits))
+                self.bits = []
+                if self.direction is None:
+                    matched = value >> 1 == self.address
+                    self.direction = value & 1 if matched else 2
+                    self.first = True
+                    self.bytes.append(value)
+                    self.low = matched
+                elif self.direction == 0:
+                    if self.first:
+                        self.pointer = value
+                        self.first = False
+                    else:
+                        self.registers[self.pointer % len(self.registers)] = value
+                        self.pointer += 1
+                    self.bytes.append(value)
+                    self.low = True
+                else:
+                    self.low = False
+            elif self.direction == 1:
+                self.serving = True
+                current = self.registers[self.pointer % len(self.registers)]
+                self.low = not ((current >> (7 - self.phase)) & 1)
+            else:
+                self.low = False
+            sda = int(not oe & 2 and not self.low)
+        self.prev_scl, self.prev_sda, self.prev_oe = scl, sda, oe
+        return scl | (sda << 1)
+
+
+@cocotb.test()
+async def i2c_repeated_start_register_read(d):
+    await reset(d)
+    rng = random.Random(20260917)
+    registers = [rng.randrange(256) for _ in range(16)]
+    for h, stretch in ((4, 0), (50, 13)):
+        for pointer, count in ((3, 1), (9, 7), (0, 16)):
+            await load(d, i2c_transaction(3, count, h, 200))
+            target = RegisterTarget(0x50, registers, stretch)
+            b = Bus(d, target, inputs=3)
+            await b.step(12)
+            for value in (0xA0, pointer, 0xA1):
+                await b.host.send(value)
+            result = [await b.host.receive() for _ in range(count)]
+            await b.finish()
+            assert result == [registers[(pointer + i) % 16] for i in range(count)]
+            assert target.bytes == [0xA0, pointer, 0xA1]
+            assert target.acks == [0] * (count - 1) + [1]
+            assert (target.starts, target.repeated, target.stops) == (1, 1, 1)
+            assert await b.host.page(10) == 0
+    # Write two registers, then read them back after the repeated START.
+    await load(d, i2c_transaction(5, 2, 4, 200))
+    target = RegisterTarget(0x50, registers)
+    b = Bus(d, target, inputs=3)
+    await b.step(12)
+    for value in (0xA0, 5, 0x12, 0x34, 0xA1):
+        await b.host.send(value)
+    assert [await b.host.receive() for _ in range(2)] == [registers[7], registers[8]]
+    await b.finish()
+    assert target.registers[5:7] == [0x12, 0x34]
+    assert target.bytes == [0xA0, 5, 0x12, 0x34, 0xA1]
+    assert (target.starts, target.repeated, target.stops) == (1, 1, 1)
+    # Unmatched address is NACKed: STOP then TRAP, no repeated START, no data.
+    await load(d, i2c_transaction(3, 4, 4, 200))
+    target = RegisterTarget(0x51, registers)
+    b = Bus(d, target, inputs=3)
+    await b.step(12)
+    for value in (0xA0, 0, 0xA1):
+        await b.host.send(value)
+    await b.finish(fault=True)
+    assert target.bytes == [0xA0]
+    assert (target.starts, target.repeated, target.stops) == (1, 0, 1)
+    assert await b.host.page(3) == 0
+    # A stretch that never ends during the repeated START must hit the bounded wait.
+    await load(d, i2c_transaction(3, 1, 4, 25))
+    target = RegisterTarget(0x50, registers)
+    b = Bus(d, target, inputs=3)
+    await b.step(12)
+    for value in (0xA0, 0, 0xA1):
+        await b.host.send(value)
+    target.stretch = 1000
+    await b.finish(fault=True, limit=3000)
+    assert target.repeated == 0
     assert await b.host.page(3) == 0
 
 

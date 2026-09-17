@@ -9,9 +9,10 @@ The chip executes firmware that drives, samples and shifts data through five bid
 - 64 × 32-bit writable instruction store, byte registers, independent bit/byte loops and input-dependent branches.
 - Eight-byte TX and RX FIFOs, explicit backpressure, and an eight-entry timestamped input capture FIFO.
 - Multi-byte UART 8N1 transmit/receive; SPI full-duplex transfers in all four modes and both bit orders.
-- I²C single-controller writes and reads, ACK/NACK, bounded clock stretching and transmitted-bit contention detection. Repeated START remains future work.
-- Twenty RTL regressions pass: the original ten plus ten streaming, framing, queue, capture and malformed-instruction tests, with five streaming mutation controls detected (`tools/check_streaming_mutations.py`). [Streaming interface and limitations](docs/streaming.md).
-- Reproducible UART stop-bit fault demonstration with timestamped modeled-target responses: `just capture-demo`.
+- I²C single-controller writes, reads and write-then-read register transactions with repeated START; ACK/NACK, bounded clock stretching and transmitted-bit contention detection.
+- Twenty-one RTL regressions pass: the original ten plus eleven streaming, framing, queue, capture, repeated-START and malformed-instruction tests, with six streaming mutation controls detected (`tools/check_streaming_mutations.py`). [Streaming interface and limitations](docs/streaming.md).
+- Reproducible UART stop-bit fault demonstration with timestamped modeled-target responses: `just capture-demo`. A 100-run sweep of fault length and byte (`just fault-sweep`, [evidence](reports/fault-sweep.json)) feeds the interactive [fault sweep page](docs/fault-sweep.html), where every slider position is a real simulation.
+- Formal safety, bounded-wait and FIFO data-integrity properties proven by k-induction with SymbiYosys, with six negative controls: `just formal` ([evidence](reports/formal.json)).
 
 The **streaming design** completed layout on 6×4 tiles at 10 MHz: 18,776 cells
 excluding fill (2,644 flip-flops), 34.1% utilization, +57.4 ns slow-corner setup
@@ -77,7 +78,7 @@ Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/
 
 Pushes run the RTL regression. The retained official GDS, documentation and FPGA workflows are manually dispatched while the physical flow is being brought up. No competition signup or final submission has been made.
 
-Next: I²C repeated START, and formal safety/liveness properties. No FPGA is required for the current work.
+Next: rerun the physical flow and gate-level regressions on this revision, then the submission write-up. No FPGA is required for the current work.
 
 ## Provenance
 

@@ -1,9 +1,9 @@
 {
   "method": "Isolated source copies, deliberate one-bug edits; each must compile and fail its named cocotb assertion.",
   "sources": {
-    "src/engine.v": "34fcba56d5e08485d2eb27fa440ad8e0016bfabbf9acb088d335b8297c31b237",
-    "tools/streaming.py": "7d9c17dacbec5a556d1232f7e913f73a4c2a805a3fff851348f099cb131ac480",
-    "test/test_streaming.py": "49cb3f5c68a0a7b6e166c4c7e63a9002e01bdba8e375e9e32ee28a12a5d00fe1"
+    "src/engine.v": "596bc64d3575ae9f9c38fb5cf9593fa6a33c03a3f1a5e522c35b7a1cb3132d53",
+    "tools/streaming.py": "4596013a13062f04e4d4da2b821f50b0cb2ad4988fdc4a6a60e0e2fe98b4e22e",
+    "test/test_streaming.py": "428ba078ad094c7090ea81f84602335ddaeca04e840bd85e2fe3a11a764a0abe"
   },
   "cases": [
     {
@@ -36,6 +36,14 @@
       "before": "w[final] = last_byte(ack_clock)",
       "after": "w[final] = hold(1)",
       "test": "multibyte_i2c_write_and_read",
+      "detected": true
+    },
+    {
+      "mutation": "skip_repeated_start",
+      "file": "tools/streaming.py",
+      "before": "wait_pin(1, 1, timeout), hold(h), patch(2, 0, 2, h), patch(1, 0, 1, h),\n          jump(send)]",
+      "after": "patch(1, 0, 1, h),\n          jump(send)]",
+      "test": "i2c_repeated_start_register_read",
       "detected": true
     },
     {

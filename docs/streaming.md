@@ -10,6 +10,7 @@ Generate example images with `just stream-demo`, or customize a transfer:
 ```sh
 uv run --python .venv/bin/python tools/streaming.py spi.bin --protocol spi --count 32 --mode 3
 uv run --python .venv/bin/python tools/streaming.py read.bin --protocol i2c-read --address 0x50 --count 8
+uv run --python .venv/bin/python tools/streaming.py regread.bin --protocol i2c-transaction --write-count 3 --count 4
 ```
 
 Load the generated image with the original loader, start RUN, then use the host
@@ -130,8 +131,18 @@ lane input; the simulator peer supplies this electrical feedback explicitly.
 - `i2c_write_stream`: a 7-bit address and 1–255 data bytes, ACK/NACK, stretching,
   and transmitted-bit contention checks.
 - `i2c_read`: address+read, 1–255 bytes, ACK every byte except a final NACK, then
-  STOP. RX backpressure holds SCL low before the ACK/NACK clock. No repeated
-  START/register-address preamble, bus recovery, or full multi-controller mode.
+  STOP. RX backpressure holds SCL low before the ACK/NACK clock.
+- `i2c_transaction`: write then read joined by a repeated START, the register
+  read every memory-mapped I²C device needs. The host pushes `write_count`
+  bytes: address+W, the payload (usually a register pointer, optionally data),
+  and address+R last; the firmware is address-agnostic. Before that final pushed
+  byte it releases SDA with SCL low, releases SCL, waits for SCL and SDA high
+  (bounded, so a stretching or stuck target times out), then pulls SDA low with
+  SCL high: a START without an intervening STOP. It then re-arms the byte
+  counter with STREAM and runs the `i2c_read` receive loop. Any NACK during the
+  write phase produces STOP then TRAP, as for the other I²C programs. Still
+  absent: bus recovery, arbitration loss handling beyond CHECK_TX, and full
+  multi-controller mode.
 
 I²C's default holds remain 50 clocks. Minimum holds are four clocks; this is a
 digital synchronization minimum, not an electrical speed/compliance guarantee.
@@ -144,6 +155,18 @@ echo on lane 0 and a modeled target response on lane 4. The independent UART
 peer detects the framing result, then emits an eleven-clock response pulse:
 103 clocks after a normal stop sample or 59 after a framing error. Those target
 latencies are demonstration parameters, not measured hardware behavior.
+
+`fault_demo(byte=..., fault_clocks=n)` generalizes this: the stop bit is driven
+low for exactly `n` clocks, up to two bit periods (0 is a clean frame; beyond
+one bit period the firmware releases idle and watches for the response at
+once; longer faults would outlast the modeled response, so they are rejected). `just fault-sweep`
+runs `test/test_sweep.py`: 20 fault lengths × 5 bytes, each a full engine run
+whose captured events must match the independent receiver's edge list with a
+constant synchronizer offset and no capture overflow. The result
+(`reports/fault-sweep.json`) is embedded in `docs/fault-sweep.html`, an
+interactive page where the slider selects a real run. Bytes are chosen so a
+frame, its fault and the response fit the eight-entry capture; an alternating
+byte would need host draining mid-run.
 
 Run `just capture-demo` to regenerate the JSON evidence under `build/`. The test
 checks every recorded pin value against external edges and requires a constant
