@@ -10,9 +10,25 @@ from cocotb.triggers import Timer
 from test_engine import expect_halt, load, reset, tick
 from test_protocols import I2CPeer
 from program import HALT, SAMPLE, djnz, drive, hold, load_byte, shift_in, shift_out, wait_pin
-from streaming import (Host, PULL, PUSH, byte_loop, capture, fault_demo, i2c_read,
-                       i2c_transaction, i2c_write_stream, spi_stream, stream, uart_rx,
-                       uart_tx_stream)
+from streaming import (FAULT_PULSE, FAULT_RESPONSE, Host, PULL, PUSH, byte_loop, capture,
+                       fault_demo, fault_demo_limit, i2c_read, i2c_transaction,
+                       i2c_write_stream, spi_stream, stream, uart_rx, uart_tx_stream)
+
+
+UNKNOWN_TO_ZERO = str.maketrans("xzXZ", "0000")
+
+
+def driven(d):
+    """(oe, out) of the bidirectional pins as integers.
+
+    Gate-level flops that nothing has written yet read X; that is acceptable only
+    on lanes whose output is disabled, where the pin is released anyway.
+    """
+    oe = int(d.uio_oe.value)
+    raw = str(d.uio_out.value)
+    unknown = int("".join("1" if c in "xzXZ" else "0" for c in raw), 2)
+    assert unknown & oe == 0, f"unknown value on an enabled lane: oe={oe:05b} out={raw}"
+    return oe, int(raw.translate(UNKNOWN_TO_ZERO), 2)
 
 
 class Bus:
@@ -79,7 +95,8 @@ async def fifo_boundaries_backpressure_and_reset(d):
     gate = 0
 
     def loopback(b):
-        return gate | (int(d.uio_out.value) & int(d.uio_oe.value) & 1)
+        oe, out = driven(d)
+        return gate | (out & oe & 1)
 
     b = Bus(d, loopback)
     await b.step(10)
@@ -147,7 +164,7 @@ class SPIPeer:
         self.miso = 0
 
     def __call__(self, b):
-        oe, out = int(b.d.uio_oe.value), int(b.d.uio_out.value)
+        oe, out = driven(b.d)
         cpol, cpha = self.mode >> 1, self.mode & 1
         cs = (out >> 3) & 1 if oe & 8 else 1
         sck = out & 1 if oe & 1 else cpol
@@ -298,7 +315,8 @@ class UARTReceiver:
         self.sample = 0
 
     def __call__(self, b):
-        level = int(b.d.uio_out.value) & 1 if int(b.d.uio_oe.value) & 1 else 1
+        oe, out = driven(b.d)
+        level = out & 1 if oe & 1 else 1
         if self.start is None and self.prev and not level:
             self.start = b.cycle
             self.sample = b.cycle + self.clocks // 2
@@ -397,7 +415,8 @@ class ReadTarget:
         self.starts = self.stops = 0
 
     def __call__(self, b):
-        oe, out = int(b.d.uio_oe.value) & 3, int(b.d.uio_out.value) & 3
+        oe, out = driven(b.d)
+        oe, out = oe & 3, out & 3
         assert not oe & out
         if self.prev_oe & 1 and not oe & 1:
             self.left = self.stretch
@@ -511,10 +530,14 @@ class RegisterTarget:
     Only a START while a transaction is open counts as repeated; a STOP closes
     the transaction and a fresh START would count as a new one.
     """
-    def __init__(self, address, registers, stretch=0):
+    def __init__(self, address, registers, stretch=0, stretch_after_bytes=None):
         self.address = address
         self.registers = list(registers)
         self.stretch = stretch
+        # None: stretch every clock. N: stretch only the SCL releases that follow
+        # the ACK of the Nth received byte, i.e. the release before a repeated
+        # START (and the first clock after it), not the transfers before.
+        self.stretch_after_bytes = stretch_after_bytes
         self.left = 0
         self.prev_oe = 0
         self.prev_scl = self.prev_sda = 1
@@ -531,10 +554,13 @@ class RegisterTarget:
         self.acks = []
 
     def __call__(self, b):
-        oe, out = int(b.d.uio_oe.value) & 3, int(b.d.uio_out.value) & 3
+        oe, out = driven(b.d)
+        oe, out = oe & 3, out & 3
         assert not oe & out
         if self.prev_oe & 1 and not oe & 1:
-            self.left = self.stretch
+            armed = (self.stretch_after_bytes is None or
+                     (len(self.bytes) >= self.stretch_after_bytes and self.phase == 0))
+            self.left = self.stretch if armed else 0
         scl = int(not oe & 1 and self.left == 0)
         self.left = max(0, self.left - 1)
         sda = int(not oe & 2 and not self.low)
@@ -643,17 +669,103 @@ async def i2c_repeated_start_register_read(d):
     assert target.bytes == [0xA0]
     assert (target.starts, target.repeated, target.stops) == (1, 0, 1)
     assert await b.host.page(3) == 0
-    # A stretch that never ends during the repeated START must hit the bounded wait.
+    # A stretch that begins at the SCL release before the repeated START and never
+    # ends must hit the restart's own bounded wait: both write bytes were ACKed
+    # first, no repeated START was seen and no read byte was clocked.
     await load(d, i2c_transaction(3, 1, 4, 25))
-    target = RegisterTarget(0x50, registers)
+    target = RegisterTarget(0x50, registers, stretch=1000, stretch_after_bytes=2)
     b = Bus(d, target, inputs=3)
     await b.step(12)
     for value in (0xA0, 0, 0xA1):
         await b.host.send(value)
-    target.stretch = 1000
     await b.finish(fault=True, limit=3000)
-    assert target.repeated == 0
+    assert target.bytes == [0xA0, 0]
+    assert (target.starts, target.repeated, target.stops) == (1, 0, 0)
     assert await b.host.page(3) == 0
+    # Control: the same restart stretch, shorter than the timeout, completes the read.
+    await load(d, i2c_transaction(3, 1, 4, 25))
+    target = RegisterTarget(0x50, registers, stretch=20, stretch_after_bytes=2)
+    b = Bus(d, target, inputs=3)
+    await b.step(12)
+    for value in (0xA0, 0, 0xA1):
+        await b.host.send(value)
+    assert await b.host.receive() == registers[0]
+    await b.finish()
+    assert target.bytes == [0xA0, 0, 0xA1]
+    assert (target.starts, target.repeated, target.stops) == (1, 1, 1)
+    assert await b.host.page(10) == 0
+
+
+async def fault_run(d, words, clocks, fault=False, limit=30000):
+    """Run a fault-demo program against the modeled target; return its frames and edges."""
+    await load(d, words)
+    uart = UARTReceiver(clocks)
+    pulse_start = None
+    edges = []
+    last = 1
+
+    def target(b):
+        nonlocal pulse_start, last
+        level = uart(b)
+        if uart.frames and pulse_start is None:
+            verdict = "clean" if uart.frames[0][1] else "framing_error"
+            pulse_start = uart.frames[0][2] + FAULT_RESPONSE[verdict]
+        response = int(pulse_start is not None and pulse_start <= b.cycle < pulse_start + FAULT_PULSE)
+        pins = level | (response << 4)
+        if pins != last:
+            edges.append((b.cycle, pins))
+        last = pins
+        return pins
+
+    b = Bus(d, target, inputs=1)
+    await b.finish(limit=limit, fault=fault)
+    return b, uart, edges
+
+
+@cocotb.test()
+async def fault_demo_bounds(d):
+    """The accepted fault length is exactly the window in which the response is seen."""
+    await reset(d)
+    for bad in ({"cycles_per_bit": 64, "fault_clocks": 128}, {"cycles_per_bit": 3},
+                {"cycles_per_bit": 32, "fault_clocks": -1}, {"byte": 256}):
+        try:
+            fault_demo(**bad)
+        except ValueError:
+            continue
+        raise AssertionError(f"fault_demo accepted {bad}")
+    for clocks in (32, 64):
+        limit = fault_demo_limit(clocks)
+        assert limit > clocks
+        # Longest accepted fault: the response is still seen; one more is rejected.
+        b, uart, edges = await fault_run(d, fault_demo(cycles_per_bit=clocks, fault_clocks=limit), clocks)
+        events = await b.host.captures()
+        assert [(v, stop) for v, stop, _ in uart.frames] == [(255, 0)]
+        assert [e["pins"] for e in events] == [e[1] for e in edges]
+        assert len([e for e in events if e["pins"] & 16]) == 1
+        assert await b.host.page(10) == 0
+        try:
+            fault_demo(cycles_per_bit=clocks, fault_clocks=limit + 1)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("fault beyond the response window was accepted")
+        # Negative control: a firmware built for a target one clock slower misses
+        # the real response and faults on the bounded wait; the pulse is captured.
+        words = fault_demo(cycles_per_bit=clocks, fault_clocks=limit + 1,
+                           response_clocks=FAULT_RESPONSE["framing_error"] + 1)
+        b, uart, edges = await fault_run(d, words, clocks, fault=True)
+        events = await b.host.captures()
+        assert len([e for e in events if e["pins"] & 16]) == 1
+        assert [e["pins"] for e in events] == [e[1] for e in edges]
+    # Faults shorter than a bit and clean frames at wider bit periods still see
+    # the response, because the watch starts as soon as the line is released.
+    for clocks, fault in ((64, 40), (87, 0), (87, 43), (87, 44)):
+        b, uart, edges = await fault_run(d, fault_demo(cycles_per_bit=clocks, fault_clocks=fault), clocks)
+        events = await b.host.captures()
+        assert [(v, stop) for v, stop, _ in uart.frames] == [(255, int(fault <= clocks // 2))]
+        response = [e for e in events if e["pins"] & 16]
+        assert len(response) == 1
+        assert await b.host.page(10) == 0
 
 
 @cocotb.test()

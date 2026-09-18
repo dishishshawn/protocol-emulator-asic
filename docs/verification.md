@@ -176,7 +176,7 @@ program memory, are unconstrained beyond an initial reset.
 | `bmc`, depth 40 | All assertions hold from reset for 40 clocks |
 | `prove`, depth 24 | Base case and temporal induction pass: the properties hold for every reachable state, unbounded |
 | `cover`, depth 60 | All six reachability targets reached between steps 13 and 28 |
-| Negative controls | Six one-bug engine mutations each fail the named property (`tools/check_formal_mutations.py`) |
+| Negative controls | Seven one-bug engine mutations each fail the named property (`tools/check_formal_mutations.py`) |
 
 Safety (S1–S10): no output enable unless running, fault implies halted, running
 and halted exclusive; every lane released within two synchronized samples of
@@ -246,3 +246,61 @@ The physical evidence is now complete for this design revision; rerun `just hard
 
 - [Pinned IHP CMOS5L PDK](https://github.com/IHP-GmbH/ihp-sg13cmos5l/tree/607e18d4bd9214a52575c194b4181ef449f9252f): Liberty area/timing data and Verilog cell models.
 - [NXP UM10204](https://www.nxp.jp/docs/en/user-guide/UM10204.pdf): I²C START/STOP, ACK, open-drain signaling and clock stretching reference. This prototype implements the documented subset above.
+
+## Review fixes (September 18, 2026)
+
+A review of `main` at 3d35878 found four gaps; each is fixed and paired with a
+negative control that fails without the fix. The RTL is unchanged.
+
+- **Demo timing.** `fault_demo` accepted settings whose modeled response the
+  firmware could never see (64 clocks/bit with a 128-clock fault timed out),
+  and its watch only began a full bit period after the stop bit started, so
+  even short faults at 64 clocks/bit and clean frames at 87 clocks/bit missed
+  the response. The firmware now releases the line one clock after the fault
+  and watches at once; `fault_demo_limit()` derives the longest visible fault
+  from the modeled latency, pulse width and synchronizer depth, and longer
+  requests raise `ValueError`. `fault_demo_bounds` (twenty-second RTL test)
+  runs the limit at 32 and 64 clocks/bit, rejects limit + 1, and shows that a
+  firmware built for a one-clock-slower target faults on its bounded wait
+  while the capture still records the pulse. Streaming mutation control
+  `fault_watch_after_full_stop_bit` (old watch timing) is detected.
+- **Repeated-START timeout.** The unbounded-stretch case set the stretch after
+  the host sends, during the address byte, so the fault came from the ordinary
+  byte transfer. `RegisterTarget(stretch_after_bytes=2)` now arms the stretch
+  at the SCL release that follows the ACK of the second write byte, which is
+  the release inside the repeated-START sequence; the test asserts both write
+  bytes were ACKed, no repeated START or STOP was seen and no read byte was
+  clocked, and a control with the same stretch below the timeout completes the
+  read. Mutation control `restart_wait_unbounded` (the restart's WAIT without
+  a timeout) is detected.
+- **Fault sweep.** The sweep checked capture accuracy but not that the fault
+  happened. It now measures, from the peer's edge list (equal to the captured
+  events), how long lane 0 stayed low from the start of the stop bit, asserts
+  that equals the requested length, and asserts the receiver's verdict follows
+  from its mid-bit sample; `reports/fault-sweep.json` gains
+  `measured_fault_clocks`. Mutation control `clean_frames_only` (a generator
+  that never drives the fault) is detected.
+- **Formal S5.** The exclusion `instruction[27:24] != 1` also removed CAPTURE
+  (opcode D sub-op 1) from the property, so CAPTURE's `stream_enabled` guard was
+  unproven. S5 now covers every C sub-op except STREAM and every D sub-op.
+  A seventh negative control, `capture_without_stream`, is detected at step 13;
+  the same mutation passes bmc under the old property
+  (`build/formal-mutations/capture_without_stream_oldprop`).
+
+| Check | Result |
+| --- | --- |
+| RTL regression | 22/22 (`build/rtl-regression-review.log`) |
+| Fault sweep | 100/100 runs, measured fault equals requested in every run ([evidence](../reports/fault-sweep.json)) |
+| Formal bmc / prove / cover | PASS / PASS (induction at step 21) / all six covers reached ([evidence](../reports/formal.json)) |
+| Formal negative controls | 7/7 detected |
+| Streaming negative controls | 9/9 detected ([evidence](../reports/streaming-mutations.json)) |
+| Gate-level SDF, streaming netlist | the three changed tests and the sweep at all three corners, 12/12 (`build/review-sdf-chain.log`, `build/sdf-review-<corner>-<test>.log`) |
+
+Two things surfaced while rerunning the gate-level tests. `just test-sdf`
+defaulted to `build/run-docker`, the pre-streaming layout (netlist SHA-256
+8d1a5d17…, the baseline in `reports/sdf-tests.json`); STREAM faults there, so
+the default now names `build/run-streaming` (909fe65f…, the layout in
+`reports/cmos5l-layout.json`). And a streaming test run alone on the netlist
+reads X from flops nothing has written yet; the peer models now read the pins
+through `driven()`, which resolves X only on lanes with output enable low and
+asserts on any enabled lane.

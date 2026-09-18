@@ -200,29 +200,59 @@ def i2c_transaction(write_count, read_count, half_period=50, timeout=2000):
     return w
 
 
-def fault_demo(faulted=False, cycles_per_bit=32, byte=255, fault_clocks=None):
+# Fault demo target model: the modeled target answers RESPONSE_CLOCKS after the
+# receiver's mid-stop sample with a PULSE_CLOCKS high pulse on lane 4. Lane 4
+# reaches the engine through a SYNC_CLOCKS-deep synchronizer (measured in
+# test_streaming.fault_demo_bounds).
+FAULT_RESPONSE = {"clean": 103, "framing_error": 59}
+FAULT_PULSE = 11
+SYNC_CLOCKS = 3
+
+
+def fault_demo_limit(cycles_per_bit, response_clocks=FAULT_RESPONSE["framing_error"],
+                     pulse_clocks=FAULT_PULSE):
+    """Longest fault whose response the firmware can still see.
+
+    The firmware starts watching lane 4 one clock after the fault ends
+    (fault_clocks + 1 clocks into the stop bit). The synchronized pulse is
+    visible from cycles_per_bit // 2 + response + SYNC until pulse_clocks - 1
+    later, so the watch must begin no later than that last clock.
+    """
+    return cycles_per_bit // 2 + response_clocks + pulse_clocks + SYNC_CLOCKS - 2
+
+
+def fault_demo(faulted=False, cycles_per_bit=32, byte=255, fault_clocks=None,
+               response_clocks=None, pulse_clocks=FAULT_PULSE):
     """Send a byte with a normal or shortened stop bit; capture UART echo and lane 4.
 
     fault_clocks drives the stop bit low for exactly that many clocks (0 is a
     clean frame; more than a bit period extends the fault past the frame).
-    faulted=True is the original demo: the whole stop bit low. The firmware
-    only starts watching lane 4 after the fault ends, and the modeled target
-    answers a framing error 59 clocks after the mid-stop sample, so faults are
-    limited to two bit periods; longer ones would miss the response and fault.
+    faulted=True is the original demo: the whole stop bit low. The line is
+    released to idle one clock after the fault ends and the firmware then
+    watches lane 4 for the response, so the stop bit is never shorter than a
+    bit period. The response window is bounded by the modeled target: a fault
+    longer than fault_demo_limit() ends after the response has passed, so the
+    watch would time out and fault. response_clocks defaults to the modeled
+    latency for the verdict the receiver will reach.
     """
     if fault_clocks is None:
         fault_clocks = cycles_per_bit if faulted else 0
-    if not 0 <= fault_clocks <= 2 * cycles_per_bit:
-        raise ValueError("fault_clocks must be 0..2*cycles_per_bit")
+    if not 4 <= cycles_per_bit <= 4096 or not 0 <= byte < 256 or fault_clocks < 0:
+        raise ValueError("fault_demo needs 4..4096 clocks/bit, a byte and fault_clocks >= 0")
+    if response_clocks is None:
+        verdict = "clean" if fault_clocks <= cycles_per_bit // 2 else "framing_error"
+        response_clocks = FAULT_RESPONSE[verdict]
+    limit = fault_demo_limit(cycles_per_bit, response_clocks, pulse_clocks)
+    if fault_clocks > limit:
+        raise ValueError(f"fault_clocks {fault_clocks} exceeds {limit}: the modeled "
+                         "response would end before the firmware watches lane 4")
+    # Worst case the watch starts at the stop bit and waits for a clean response.
+    timeout = cycles_per_bit // 2 + max(FAULT_RESPONSE.values()) + pulse_clocks + SYNC_CLOCKS + 64
     w = [stream(1), capture(17)] + uart_tx(byte, cycles_per_bit)[:-2]
-    if fault_clocks == 0:
-        w += [drive(1, 1, cycles_per_bit)]
-    elif fault_clocks < cycles_per_bit:
-        w += [drive(0, 1, fault_clocks), drive(1, 1, cycles_per_bit - fault_clocks)]
-    else:  # long fault: release idle and watch for the response at once
-        w += [drive(0, 1, fault_clocks), drive(1, 1, 1)]
-    w += [drive(1, 1, cycles_per_bit if fault_clocks < cycles_per_bit else 1), wait_pin(4, 1, 1000),
-          wait_pin(4, 0, 1000), hold(4), capture(0), HALT]
+    if fault_clocks:
+        w += [drive(0, 1, fault_clocks)]
+    w += [drive(1, 1, 1), wait_pin(4, 1, timeout), wait_pin(4, 0, timeout), hold(4),
+          capture(0), HALT]
     return w
 
 

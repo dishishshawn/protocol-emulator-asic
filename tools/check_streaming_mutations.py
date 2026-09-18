@@ -30,6 +30,18 @@ CASES = [
     ("host_skips_readiness", "tools/streaming.py",
      "        await self.ready()\n", "",
      "host_waits_for_stream_enable"),
+    ("restart_wait_unbounded", "tools/streaming.py",
+     "w += [patch(2, 0, 0, h), patch(1, 0, 0, 4), wait_pin(0, 1, timeout),\n          wait_pin(1, 1, timeout), hold(h)",
+     "w += [patch(2, 0, 0, h), patch(1, 0, 0, 4), wait_pin(0, 1),\n          wait_pin(1, 1, timeout), hold(h)",
+     "i2c_repeated_start_register_read"),
+    ("fault_watch_after_full_stop_bit", "tools/streaming.py",
+     "    w += [drive(1, 1, 1), wait_pin(4, 1, timeout)",
+     "    w += [drive(1, 1, cycles_per_bit), wait_pin(4, 1, timeout)",
+     "fault_demo_bounds"),
+    ("clean_frames_only", "tools/streaming.py",
+     "    if fault_clocks:\n        w += [drive(0, 1, fault_clocks)]",
+     "    if False:\n        w += [drive(0, 1, fault_clocks)]",
+     "test_sweep.fault_length_sweep"),
 ]
 
 
@@ -38,12 +50,16 @@ def main():
     work.mkdir(parents=True, exist_ok=True)
     report = {"method": "Isolated source copies, deliberate one-bug edits; each must compile and fail its named cocotb assertion.",
               "sources": {p: hashlib.sha256((ROOT / p).read_bytes()).hexdigest()
-                          for p in ["src/engine.v", "tools/streaming.py", "test/test_streaming.py"]},
+                          for p in ["src/engine.v", "tools/streaming.py", "test/test_streaming.py",
+                                    "test/test_sweep.py"]},
               "cases": []}
     env = os.environ.copy()
     env["PATH"] = str(ROOT / ".venv/bin") + os.pathsep + env["PATH"]
     env.pop("DEMO_REPORT", None)
+    env.pop("SWEEP_REPORT", None)
     for name, file, before, after, test in CASES:
+        module, _, test = test.rpartition(".")
+        module = module or "test_streaming"
         directory = work / name
         directory.mkdir(exist_ok=True)
         for sub, pattern in [("src", "*.v"), ("test", "*.py"), ("tools", "*.py")]:
@@ -61,15 +77,15 @@ def main():
         results.unlink(missing_ok=True)
         with (directory / "run.log").open("w") as log:
             run = subprocess.run(["make", "-C", str(directory / "test"),
-                                  "COCOTB_TEST_MODULES=test_streaming",
+                                  f"COCOTB_TEST_MODULES={module}",
                                   f"COCOTB_TEST_FILTER={test}"], env=env,
-                                 stdout=log, stderr=subprocess.STDOUT, timeout=180)
+                                 stdout=log, stderr=subprocess.STDOUT, timeout=600)
         # cocotb lists filtered-out tests as skipped; only executed cases count.
         cases = [c for c in ET.parse(results).iter("testcase")
                  if c.find("skipped") is None] if results.exists() else []
         detected = run.returncode != 0 and len(cases) == 1 and cases[0].get("name") == test and cases[0].find("failure") is not None
         report["cases"].append({"mutation": name, "file": file, "before": before,
-                                "after": after, "test": test, "detected": detected})
+                                "after": after, "test": f"{module}.{test}", "detected": detected})
         print(f"{name}: {'detected' if detected else 'NOT DETECTED'}", flush=True)
     (work / "results.json").write_text(json.dumps(report, indent=2) + "\n")
     if not all(case["detected"] for case in report["cases"]):

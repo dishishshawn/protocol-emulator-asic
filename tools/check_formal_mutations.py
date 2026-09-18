@@ -15,6 +15,8 @@ CASES = [
      "if (wait_elapsed == instruction[27:10])", "S7 bounded WAIT"),
     ("pull_without_stream", "if (!stream_enabled) fail_closed();\n                                    else if (tx_used != 0) begin",
      "if (tx_used != 0) begin", "S5 streaming gate"),
+    ("capture_without_stream", "if (!stream_enabled || instruction[27:24] != 1) fail_closed();",
+     "if (instruction[27:24] != 1) fail_closed();", "S5 streaming gate (CAPTURE)"),
     ("rx_fifo_writes_wrong_slot", "if (rx_push) begin rx_fifo[rx_wr] <= rx_shift;",
      "if (rx_push) begin rx_fifo[rx_wr + 1'b1] <= rx_shift;", "D2 RX integrity"),
     ("host_command_faults_engine", "            end else if (running) begin\n                if (delay_left != 0) begin",

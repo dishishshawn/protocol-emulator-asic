@@ -157,12 +157,21 @@ peer detects the framing result, then emits an eleven-clock response pulse:
 latencies are demonstration parameters, not measured hardware behavior.
 
 `fault_demo(byte=..., fault_clocks=n)` generalizes this: the stop bit is driven
-low for exactly `n` clocks, up to two bit periods (0 is a clean frame; beyond
-one bit period the firmware releases idle and watches for the response at
-once; longer faults would outlast the modeled response, so they are rejected). `just fault-sweep`
+low for exactly `n` clocks (0 is a clean frame), the line is released to idle
+one clock later and the firmware watches lane 4 from then on, so the stop bit
+is never shorter than a bit period and the watch never waits for a full bit
+first. The response window is bounded by the modeled target:
+`fault_demo_limit(cycles_per_bit)` (half a bit plus 71 clocks: 59-clock
+latency, 11-clock pulse, 3-clock synchronizer) is the longest fault whose
+response the firmware can still see, and longer requests raise `ValueError`
+instead of producing a firmware that times out. `fault_demo_bounds` runs the
+limit and, as a negative control, the limit plus one built for a
+one-clock-slower target, which faults on the bounded wait. `just fault-sweep`
 runs `test/test_sweep.py`: 20 fault lengths × 5 bytes, each a full engine run
 whose captured events must match the independent receiver's edge list with a
-constant synchronizer offset and no capture overflow. The result
+constant synchronizer offset and no capture overflow, whose measured low time
+from the start of the stop bit must equal the requested fault length, and
+whose framing verdict must follow from the receiver's mid-bit sample. The result
 (`reports/fault-sweep.json`) is embedded in `docs/fault-sweep.html`, an
 interactive page where the slider selects a real run. Bytes are chosen so a
 frame, its fault and the response fit the eight-entry capture; an alternating

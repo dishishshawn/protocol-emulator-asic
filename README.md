@@ -12,7 +12,7 @@ The chip executes firmware that drives, samples and shifts data through five bid
 - I²C single-controller writes, reads and write-then-read register transactions with repeated START; ACK/NACK, bounded clock stretching and transmitted-bit contention detection.
 - Twenty-one RTL regressions pass: the original ten plus eleven streaming, framing, queue, capture, repeated-START and malformed-instruction tests, with six streaming mutation controls detected (`tools/check_streaming_mutations.py`). [Streaming interface and limitations](docs/streaming.md).
 - Reproducible UART stop-bit fault demonstration with timestamped modeled-target responses: `just capture-demo`. A 100-run sweep of fault length and byte (`just fault-sweep`, [evidence](reports/fault-sweep.json)) feeds the interactive [fault sweep page](docs/fault-sweep.html), where every slider position is a real simulation.
-- Formal safety, bounded-wait and FIFO data-integrity properties proven by k-induction with SymbiYosys, with six negative controls: `just formal` ([evidence](reports/formal.json)).
+- Formal safety, bounded-wait and FIFO data-integrity properties proven by k-induction with SymbiYosys, with seven negative controls: `just formal` ([evidence](reports/formal.json)).
 
 The **streaming design** completed layout on 6×4 tiles at 10 MHz: 18,776 cells
 excluding fill (2,644 flip-flops), 34.1% utilization, +57.4 ns slow-corner setup

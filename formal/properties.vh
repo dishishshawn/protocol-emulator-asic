@@ -27,9 +27,10 @@ always @(posedge clk) if (f_valid) begin
     assert (rx_used == 8 ? rx_wr == rx_rd : rx_used == ((rx_wr - rx_rd) & 3'h7));
     assert (capture_used == 8 ? capture_wr == capture_rd
                               : capture_used == ((capture_wr - capture_rd) & 3'h7));
-    // S5. Streaming instructions fault unless STREAM ran first.
-    if ($past(issue && (f_opcode == 4'hc || f_opcode == 4'hd) &&
-              !stream_enabled && instruction[27:24] != 1))
+    // S5. Streaming instructions (every C sub-op but STREAM itself, and every
+    //     CAPTURE sub-op) fault unless STREAM ran first.
+    if ($past(issue && !stream_enabled &&
+              ((f_opcode == 4'hc && instruction[27:24] != 1) || f_opcode == 4'hd)))
         assert (fault);
     // S6. A fault arises only from an executed instruction, a bad program at the
     //     RUN rising edge, or running off the end: host traffic cannot fault the engine.

@@ -48,5 +48,7 @@ formal *tasks:
     tools/formal.sh {{tasks}}
 
 # Post-layout gate-level regression with SDF timing; corner is an STA corner name.
-test-sdf corner="nom_slow_1p08V_125C" run="build/run-docker":
+# run is the LibreLane run holding the current layout (build/run-docker is the
+# pre-streaming baseline, kept for reports/sdf-tests.json).
+test-sdf corner="nom_slow_1p08V_125C" run="build/run-streaming":
     PATH="{{justfile_directory()}}/.venv/bin:$PATH" COCOTB_RESULTS_FILE=results-sdf-{{corner}}.xml make -C test PDK_ROOT="{{justfile_directory()}}/.pdk/ihp-open-pdk" SDF_NETLIST="{{justfile_directory()}}/{{run}}/final/nl/tt_um_dishishshawn_protocol_emulator.nl.v" SDF_FILE="{{justfile_directory()}}/{{run}}/final/sdf/{{corner}}/tt_um_dishishshawn_protocol_emulator__{{corner}}.sdf"

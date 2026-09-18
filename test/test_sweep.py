@@ -19,6 +19,11 @@ RESPONSE = {"clean": 103, "framing_error": 59}  # modeled target latencies, cloc
 PULSE = 11
 
 
+def lane0(edges, cycle):
+    """Driven lane-0 level at a cycle, from the peer's edge list (idle high)."""
+    return next((pins for t, pins in reversed(edges) if t <= cycle), 1) & 1
+
+
 @cocotb.test()
 async def fault_length_sweep(d):
     await reset(d)
@@ -60,7 +65,19 @@ async def fault_length_sweep(d):
             i = events.index(response[0])
             assert events[i + 1]["cycle"] - events[i]["cycle"] == PULSE
             assert await b.host.page(10) == 0
+            # The requested fault really happened: from the start of the stop bit,
+            # lane 0 stayed low for exactly fault clocks (edges are the driven pins,
+            # equal to the captured events above), and the receiver's verdict follows
+            # from whether its mid-bit sample fell inside that fault.
+            stop_start = stop_cycle - CLOCKS // 2
+            measured = 0
+            while lane0(edges, stop_start + measured) == 0 and measured <= 4 * CLOCKS:
+                measured += 1
+            assert measured == fault
+            assert lane0(edges, stop_start - 1) == (byte >> 7)
+            assert stop == int(fault <= CLOCKS // 2)
             runs.append({"byte": byte, "fault_clocks": fault, "clocks_per_bit": CLOCKS,
+                         "measured_fault_clocks": measured,
                          "received_byte": value, "stop_bit": stop,
                          "verdict": "clean" if stop else "framing_error",
                          "response_delay_from_stop_sample": RESPONSE["clean" if stop else "framing_error"],

@@ -2,8 +2,9 @@
   "method": "Isolated source copies, deliberate one-bug edits; each must compile and fail its named cocotb assertion.",
   "sources": {
     "src/engine.v": "596bc64d3575ae9f9c38fb5cf9593fa6a33c03a3f1a5e522c35b7a1cb3132d53",
-    "tools/streaming.py": "4596013a13062f04e4d4da2b821f50b0cb2ad4988fdc4a6a60e0e2fe98b4e22e",
-    "test/test_streaming.py": "428ba078ad094c7090ea81f84602335ddaeca04e840bd85e2fe3a11a764a0abe"
+    "tools/streaming.py": "3ad4b84c7b086e340c6e35f28417264c4245a022be6331a29d80ee3f7d63dfe1",
+    "test/test_streaming.py": "e6fd3ce02c48fc928eb243ff4d0ec0cac95a92ad0fefaa433a046e66093452d3",
+    "test/test_sweep.py": "651f5f59134e5ed74a6f37c0f740fdbc7738b33b0d172c6ffd67c407ea8bcf52"
   },
   "cases": [
     {
@@ -11,7 +12,7 @@
       "file": "src/engine.v",
       "before": "2'b01: tx_used <= tx_used - 1'b1;",
       "after": "2'b01: tx_used <= tx_used - 1'b1;\n                2'b11: tx_used <= tx_used + 1'b1;",
-      "test": "simultaneous_fifo_operations",
+      "test": "test_streaming.simultaneous_fifo_operations",
       "detected": true
     },
     {
@@ -19,7 +20,7 @@
       "file": "src/engine.v",
       "before": "2'b01: rx_used <= rx_used - 1'b1;",
       "after": "2'b01: rx_used <= rx_used - 1'b1;\n                2'b11: rx_used <= rx_used + 1'b1;",
-      "test": "simultaneous_fifo_operations",
+      "test": "test_streaming.simultaneous_fifo_operations",
       "detected": true
     },
     {
@@ -27,7 +28,7 @@
       "file": "src/engine.v",
       "before": "timestamp <= timestamp + 1'b1;",
       "after": "timestamp <= timestamp + 2'd2;",
-      "test": "timestamp_capture_and_fault_demo",
+      "test": "test_streaming.timestamp_capture_and_fault_demo",
       "detected": true
     },
     {
@@ -35,7 +36,7 @@
       "file": "tools/streaming.py",
       "before": "w[final] = last_byte(ack_clock)",
       "after": "w[final] = hold(1)",
-      "test": "multibyte_i2c_write_and_read",
+      "test": "test_streaming.multibyte_i2c_write_and_read",
       "detected": true
     },
     {
@@ -43,7 +44,7 @@
       "file": "tools/streaming.py",
       "before": "wait_pin(1, 1, timeout), hold(h), patch(2, 0, 2, h), patch(1, 0, 1, h),\n          jump(send)]",
       "after": "patch(1, 0, 1, h),\n          jump(send)]",
-      "test": "i2c_repeated_start_register_read",
+      "test": "test_streaming.i2c_repeated_start_register_read",
       "detected": true
     },
     {
@@ -51,7 +52,31 @@
       "file": "tools/streaming.py",
       "before": "        await self.ready()\n",
       "after": "",
-      "test": "host_waits_for_stream_enable",
+      "test": "test_streaming.host_waits_for_stream_enable",
+      "detected": true
+    },
+    {
+      "mutation": "restart_wait_unbounded",
+      "file": "tools/streaming.py",
+      "before": "w += [patch(2, 0, 0, h), patch(1, 0, 0, 4), wait_pin(0, 1, timeout),\n          wait_pin(1, 1, timeout), hold(h)",
+      "after": "w += [patch(2, 0, 0, h), patch(1, 0, 0, 4), wait_pin(0, 1),\n          wait_pin(1, 1, timeout), hold(h)",
+      "test": "test_streaming.i2c_repeated_start_register_read",
+      "detected": true
+    },
+    {
+      "mutation": "fault_watch_after_full_stop_bit",
+      "file": "tools/streaming.py",
+      "before": "    w += [drive(1, 1, 1), wait_pin(4, 1, timeout)",
+      "after": "    w += [drive(1, 1, cycles_per_bit), wait_pin(4, 1, timeout)",
+      "test": "test_streaming.fault_demo_bounds",
+      "detected": true
+    },
+    {
+      "mutation": "clean_frames_only",
+      "file": "tools/streaming.py",
+      "before": "    if fault_clocks:\n        w += [drive(0, 1, fault_clocks)]",
+      "after": "    if False:\n        w += [drive(0, 1, fault_clocks)]",
+      "test": "test_sweep.fault_length_sweep",
       "detected": true
     }
   ]
