@@ -1,7 +1,7 @@
 # Review fixes: demo timing, restart timeout, sweep fault check, S5 coverage
 
 ## Status
-Done (committed; RTL 22/22, sweep 100/100, formal 7/7 and streaming 9/9 controls, SDF 12/12)
+Done (committed a32bcdc; CI test run 35418119540 22/22; RTL 22/22, sweep 100/100, formal 7/7 and streaming 9/9 controls, SDF 12/12)
 
 ## Requested outcome
 Fix the four issues found in the review of `main` at 3d35878 and add negative

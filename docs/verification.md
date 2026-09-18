@@ -289,7 +289,7 @@ negative control that fails without the fix. The RTL is unchanged.
 
 | Check | Result |
 | --- | --- |
-| RTL regression | 22/22 (`build/rtl-regression-review.log`) |
+| RTL regression | 22/22 locally (`build/rtl-regression-review.log`) and in CI on a32bcdc, [run 35418119540](https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35418119540) (22 run, 0 failed in its results.xml) |
 | Fault sweep | 100/100 runs, measured fault equals requested in every run ([evidence](../reports/fault-sweep.json)) |
 | Formal bmc / prove / cover | PASS / PASS (induction at step 21) / all six covers reached ([evidence](../reports/formal.json)) |
 | Formal negative controls | 7/7 detected |
