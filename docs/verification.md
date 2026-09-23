@@ -304,3 +304,27 @@ the default now names `build/run-streaming` (909fe65f…, the layout in
 reads X from flops nothing has written yet; the peer models now read the pins
 through `driven()`, which resolves X only on lanes with output enable low and
 asserts on any enabled lane.
+
+## Formal and sweep in CI (September 23, 2026)
+
+`tools/formal.sh` now takes sby, Yosys and Yices from PATH when sby is installed
+there and otherwise uses the pinned nix-portable store paths, so the proofs no
+longer depend on this machine. The `formal` workflow installs OSS CAD Suite
+2026-09-23 and runs bmc, prove and cover, the seven formal negative controls and
+`tools/formal_report.py`; it runs on pushes that touch the engine, properties or
+formal tooling. The `test` workflow now also runs the fault sweep and fails
+unless the demo and sweep evidence it writes match `reports/` byte for byte.
+
+First runs, on commit 35b3de0 ([formal](https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35906716158), [test](https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/35906716546)):
+
+| Check | Local | CI |
+| --- | --- | --- |
+| Tools | Yosys 0.66, Yices 2.7.0 | Yosys 0.69+136, Yices 2.7.0 |
+| bmc, depth 40 | PASS | PASS |
+| prove, depth 24 | PASS, induction at step 21 | PASS, induction at step 21 |
+| cover, depth 60 | 6/6 reached | 6/6 reached |
+| Formal negative controls | 7/7 detected | 7/7 detected |
+| RTL regression | 22/22 | 22/22 |
+| Fault sweep | 100 runs | 100 runs, evidence byte-identical |
+
+The CI report's source hashes equal those in `reports/formal.json`.

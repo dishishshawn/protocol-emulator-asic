@@ -1,10 +1,12 @@
-# Roadmap — updated September 17, 2026
+# Roadmap — updated September 23, 2026
 
 ## Design intent
 
 A programmable protocol exerciser for bringing up and testing hardware. Build a small deterministic engine first, then establish a distinctive demonstration: inject a controlled timing/protocol fault and capture the target's response. Novelty is a proposal, not a claim that this capability is unprecedented.
 
 ## Completed
+
+Review fixes and CI (September 18–23): four review findings fixed with negative controls (22 RTL regressions, nine streaming and seven formal controls; the new tests pass on the routed netlist with SDF at three corners). CI now also runs the fault sweep with a byte-for-byte evidence check, and a `formal` workflow reruns the proofs and controls with pinned OSS CAD Suite tools. Submission write-up drafted in `submission.md`.
 
 Repeated START and formal (September 17): `i2c_transaction` performs write-then-read register transactions joined by a repeated START (21 RTL regressions, six streaming mutation controls). SymbiYosys proves ten safety invariants, bounded WAIT termination and TX/RX/capture data integrity by k-induction, with six formal negative controls. A 100-run fault-length sweep feeds an interactive demo page (`docs/fault-sweep.html`). The physical flow has not yet been rerun on this revision.
 
@@ -19,7 +21,7 @@ Pre-streaming baseline: the programmable UART milestone, byte transmit/receive i
 | September 2026 | UART program, clock-accurate tests, initial synthesis; assess instruction set | Verified pin traces; mapped area estimate with exact process/tool versions |
 | October 2026 | Input/output shift operations, bounded waits, conditional branches, host streaming; UART RX, SPI and I²C | Independent protocol models; randomized clock phase and I²C stretch/arbitration tests |
 | November 2026 | Stabilize memory/host interface; gate-level simulation of routed netlist; precheck; select optional FPGA target | Done early: fits 6×4 with clean DRC/LVS and timing. Baseline SDF (three corners), precheck and gl_test passed. Rerun for new features; FPGA evidence if available |
-| December 2026 | Fault injection + timestamped capture demo; formal properties; documentation | Done early: reproducible normal/faulted traces; safety, bounded-liveness and data-integrity properties proven. Remaining: submission write-up |
+| December 2026 | Fault injection + timestamped capture demo; formal properties; documentation | Done early: reproducible normal/faulted traces; safety, bounded-liveness and data-integrity properties proven; write-up drafted ([submission](submission.md)) |
 | January 1–10, 2027 | Freeze features, rerun physical flow and gate-level regressions | Tagged reproducible candidate and review packet |
 | January 11–18, 2027 | Final checks and submission | Public source, build/test instructions, required final form completed |
 

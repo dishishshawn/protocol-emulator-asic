@@ -10,9 +10,9 @@ The chip executes firmware that drives, samples and shifts data through five bid
 - Eight-byte TX and RX FIFOs, explicit backpressure, and an eight-entry timestamped input capture FIFO.
 - Multi-byte UART 8N1 transmit/receive; SPI full-duplex transfers in all four modes and both bit orders.
 - I²C single-controller writes, reads and write-then-read register transactions with repeated START; ACK/NACK, bounded clock stretching and transmitted-bit contention detection.
-- Twenty-one RTL regressions pass: the original ten plus eleven streaming, framing, queue, capture, repeated-START and malformed-instruction tests, with six streaming mutation controls detected (`tools/check_streaming_mutations.py`). [Streaming interface and limitations](docs/streaming.md).
+- Twenty-two RTL regressions pass: the original ten plus twelve streaming, framing, queue, capture, fault-timing, repeated-START and malformed-instruction tests, with nine streaming mutation controls detected (`tools/check_streaming_mutations.py`). [Streaming interface and limitations](docs/streaming.md).
 - Reproducible UART stop-bit fault demonstration with timestamped modeled-target responses: `just capture-demo`. A 100-run sweep of fault length and byte (`just fault-sweep`, [evidence](reports/fault-sweep.json)) feeds the interactive [fault sweep page](docs/fault-sweep.html), where every slider position is a real simulation.
-- Formal safety, bounded-wait and FIFO data-integrity properties proven by k-induction with SymbiYosys, with seven negative controls: `just formal` ([evidence](reports/formal.json)).
+- Formal safety, bounded-wait and FIFO data-integrity properties proven by k-induction with SymbiYosys, with seven negative controls: `just formal` ([evidence](reports/formal.json)), rerun in CI with pinned OSS CAD Suite tools.
 
 The **streaming design** completed layout on 6×4 tiles at 10 MHz: 18,776 cells
 excluding fill (2,644 flip-flops), 34.1% utilization, +57.4 ns slow-corner setup
@@ -20,7 +20,7 @@ slack, +0.12 ns fast-corner hold slack, clean routing/Magic DRC, LVS and antenna
 checks ([layout evidence](reports/cmos5l-layout.json), which also keeps the
 pre-streaming baseline). In CI this revision passed precheck (0 errors), gl_test (20/20) and the three-corner SDF regression (60/60).
 
-The allocation is 6×4 Tiny Tapeout tiles, the current competition maximum, with a provisional 10 MHz clock. See [verification](docs/verification.md), [architecture](docs/info.md), [mapped-area evidence](reports/cmos5l-area.json) and [roadmap](docs/roadmap.md).
+The allocation is 6×4 Tiny Tapeout tiles, the current competition maximum, with a provisional 10 MHz clock. See the [submission write-up](docs/submission.md), [verification](docs/verification.md), [architecture](docs/info.md), [mapped-area evidence](reports/cmos5l-area.json) and [roadmap](docs/roadmap.md).
 
 ## Run
 
@@ -76,9 +76,9 @@ Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/
 
 ## CI and next work
 
-Pushes run the RTL regression. The retained official GDS, documentation and FPGA workflows are manually dispatched while the physical flow is being brought up. No competition signup or final submission has been made.
+Pushes run the RTL regression and the fault sweep, and fail unless the demo and sweep evidence match `reports/` byte for byte. The `formal` workflow reruns the proofs, covers and formal negative controls whenever the engine, properties or formal tooling change. The official GDS, documentation and FPGA workflows are manually dispatched. No competition signup or final submission has been made.
 
-Next: rerun the physical flow and gate-level regressions on this revision, then the submission write-up. No FPGA is required for the current work.
+Next: the [submission write-up](docs/submission.md) is drafted; before submitting, make the repository public and complete the sign-up and final forms. If the RTL changes, rerun the physical flow and gate-level regressions. No FPGA is required for the current work.
 
 ## Provenance
 
