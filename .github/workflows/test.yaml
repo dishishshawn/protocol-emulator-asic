@@ -15,16 +15,23 @@ jobs:
           uv pip install --python .venv/bin/python -r test/requirements.txt
       - name: Run tests
         run: PATH="$PWD/.venv/bin:$PATH" DEMO_REPORT="$PWD/test/fault-demo.json" make -C test
+      - name: Fault-length sweep
+        run: PATH="$PWD/.venv/bin:$PATH" SWEEP_REPORT="$PWD/test/fault-sweep.json" make -C test COCOTB_TEST_MODULES=test_sweep COCOTB_RESULTS_FILE=results-sweep.xml
+      - name: Committed evidence matches this run
+        run: |
+          cmp test/fault-demo.json reports/fault-demo.json
+          cmp test/fault-sweep.json reports/fault-sweep.json
       - name: Test summary
         uses: test-summary/action@v2.4
         with:
-          paths: test/results.xml
+          paths: test/results*.xml
         if: always()
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: simulation-results
           path: |
-            test/results.xml
+            test/results*.xml
             test/fault-demo.json
+            test/fault-sweep.json
             test/tb.fst

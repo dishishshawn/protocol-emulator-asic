@@ -43,7 +43,7 @@ setup-physical *args:
 harden:
     tools/harden.sh
 
-# Formal safety, bounded-wait and FIFO integrity checks (sby via nix-portable).
+# Formal safety, bounded-wait and FIFO integrity checks (sby from PATH, else nix-portable).
 formal *tasks:
     tools/formal.sh {{tasks}}
 

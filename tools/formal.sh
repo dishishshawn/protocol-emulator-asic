@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Run the SymbiYosys tasks in formal/engine.sby with the pinned Yosys/sby/Yices
-# from the local nix-portable store (the store tools/setup-physical.sh fills).
+# Run the SymbiYosys tasks in formal/engine.sby. Tools come from PATH when sby is
+# installed there (CI: OSS CAD Suite pinned in .github/workflows/formal.yaml);
+# otherwise from the pinned nix-portable store paths below (the store
+# tools/setup-physical.sh fills). Each log starts with the tool versions used.
 # Usage: tools/formal.sh [task ...]      default: bmc prove cover
 #        FORMAL_SBY=other.sby FORMAL_OUT=dir tools/formal.sh bmc
 # Work directories: build/formal/engine_<task>; log: build/formal/<task>.log
@@ -13,8 +15,12 @@ OUT="${FORMAL_OUT:-$ROOT/build/formal}"
 mkdir -p "$OUT"
 cd "$(dirname "$SBY_FILE")"
 status=0
+tools() {
+  if command -v sby >/dev/null; then bash -c "$1"
+  else nix-portable nix shell --accept-flake-config "$YOSYS_ENV" "$YICES" --command bash -c "$1"; fi
+}
 for task in ${*:-bmc prove cover}; do
-  nix-portable nix shell --accept-flake-config "$YOSYS_ENV" "$YICES" --command bash -c "
+  tools "
     yosys -V; yices-smt2 --version | head -1; sby --help | head -1
     sby -f --prefix '$OUT/engine' '$(basename "$SBY_FILE")' $task
   " > "$OUT/$task.log" 2>&1 || status=$?
