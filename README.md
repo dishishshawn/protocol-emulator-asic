@@ -12,7 +12,7 @@ The chip executes firmware that drives, samples and shifts data through five bid
 - I²C single-controller writes, reads and write-then-read register transactions with repeated START; ACK/NACK, bounded clock stretching and transmitted-bit contention detection.
 - Twenty-two RTL regressions pass: the original ten plus twelve streaming, framing, queue, capture, fault-timing, repeated-START and malformed-instruction tests, with nine streaming mutation controls detected (`tools/check_streaming_mutations.py`). [Streaming interface and limitations](docs/streaming.md).
 - Reproducible UART stop-bit fault demonstration with timestamped modeled-target responses: `just capture-demo`. A 100-run sweep of fault length and byte (`just fault-sweep`, [evidence](reports/fault-sweep.json)) feeds the interactive [fault sweep page](docs/fault-sweep.html), where every slider position is a real simulation.
-- Receiver fingerprinting: 179 malformed frames tell five UART receiver algorithms apart from their verdicts alone, read back through the capture FIFO, with each identified blind in at most six probes (`just fingerprint`, [evidence](reports/fingerprint.json), [method and limits](docs/verification.md#receiver-fingerprinting-october-10-2026)).
+- Receiver fingerprinting: 179 malformed frames tell five UART receiver algorithms apart from their verdicts alone, read back through the capture FIFO, with each identified blind in at most six probes (`just fingerprint`, [evidence](reports/fingerprint.json), [method and limits](docs/verification.md#receiver-fingerprinting-october-10-2026)). CI [reproduced the report byte for byte](https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/38080857754).
 - Formal safety, bounded-wait and FIFO data-integrity properties proven by k-induction with SymbiYosys, with seven negative controls: `just formal` ([evidence](reports/formal.json)), rerun in CI with pinned OSS CAD Suite tools.
 
 The **streaming design** completed layout on 6×4 tiles at 10 MHz: 18,776 cells
@@ -31,6 +31,8 @@ Prerequisites: Icarus Verilog 12, uv, make, and optionally just. Install Yosys/A
 just setup
 just test
 just demo
+just fault-sweep    # 100-run stop-bit fault sweep -> build/fault-sweep.json
+just fingerprint    # receiver fingerprinting -> build/fingerprint.json
 ```
 
 `just demo` generates little-endian firmware binaries for UART, SPI and I²C. To customize:

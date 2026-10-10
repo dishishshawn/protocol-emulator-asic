@@ -430,8 +430,11 @@ engine and returns the decoded verdict.
 | Decode widths shifted one class | verdict cross-check fails | fails on 895/895 map runs |
 
 **Cost and reproducibility.** The test makes 1,061 engine runs and simulates
-734,099 bus clocks. Locally it takes 51–55 s (Icarus 12.0), so CI runs the full
-grid. Two consecutive local runs wrote byte-identical reports. Wall time goes
+734,099 bus clocks. It takes 51–55 s locally (Icarus 12.0) and 100 s in CI, so
+CI runs the full grid. Two consecutive local runs wrote byte-identical reports.
+CI [run 38080857754](https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/38080857754), on commit 094e2bc, passed 22/22, the sweep and the
+fingerprint, and its `fingerprint.json` matched the committed report byte for
+byte. Wall time goes
 to `build/fingerprint-timing.json` instead of the report, which keeps the
 report byte-comparable.
 

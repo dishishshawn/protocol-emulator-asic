@@ -32,7 +32,8 @@ Acceptance criteria:
   missed it, and 4 of the 174 unused probes would have exposed it. Recorded as
   a limit of the probe set, and the probes were not tuned.
 - **`just fingerprint` reproduces the report, and CI cmp's it: met locally.**
-  Two consecutive runs were byte-identical. CI has not run on this change yet.
+  Two consecutive runs were byte-identical. CI [run 38080857754](https://github.com/dishishshawn/protocol-emulator-asic/actions/runs/38080857754), on
+  094e2bc, reproduced it byte for byte in 100 s.
 
 Findings against the hypothesis:
 - **P1 does not separate the mid-bit receivers, as expected.** At phase 0,
@@ -53,7 +54,8 @@ Deviations from the plan:
 - **Wall time is not in `reports/fingerprint.json`,** because it would break
   the byte-for-byte check. The report records the run count and bus clocks;
   wall time goes to `build/fingerprint-timing.json`, and to
-  `test/fingerprint-timing.json` as a CI artifact. Locally it is 51–55 s.
+  `test/fingerprint-timing.json` as a CI artifact. It is 51–55 s locally and
+  100 s in CI.
 - **No reduced grid.** Ten runs took 0.56 s, so the full grid runs in CI and
   there is no `FINGERPRINT_FULL`.
 - **`identify` is async,** because engine runs are coroutines. It still sees
