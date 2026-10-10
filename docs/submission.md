@@ -1,6 +1,6 @@
 # Programmable protocol emulator: submission write-up
 
-Draft of September 23, 2026. The organizers will publish the final submission
+Draft of September 23, 2026, with receiver fingerprinting added October 10. The organizers will publish the final submission
 form closer to the January 18, 2027 deadline; this page is the material it will
 draw on. Every figure below links to machine-readable evidence in `reports/`.
 
@@ -40,6 +40,23 @@ the modeled 103 and 59 clocks at that boundary in every run. The
 real simulation. The firmware refuses fault lengths whose response it could not
 observe, and a test pins that limit to the exact clock.
 
+**Receiver fingerprinting.** The same engine identifies which of five UART
+receiver algorithms is attached, in at most six probes (three of them
+confirmations), at one-clock resolution, in simulation
+([evidence](../reports/fingerprint.json)). Firmware drives 179 malformed frames:
+shortened stop bits, mid-bit glitches, idle false starts and bit-period skew.
+Each receiver model reports its verdict on a spare lane as a pulse width, read
+back only through the capture FIFO. The result is a property of each receiver's
+sampling algorithm, not a number we chose. The stop-bit fault above cannot
+separate receivers that sample around mid-bit, because all four flip between 16
+and 17 clocks. Glitches of 1–5 clocks inside a data bit can separate them. A
+greedy decision tree names every receiver, including every tick phase of the
+two oversampling receivers. A separately written twin lands in the same
+equivalence class, and a receiver that samples one clock late is told apart
+when it is in the map. Left out of the map, that one-clock variant was
+misidentified rather than reported as unknown. The report records this as a
+limit of the confirmation probes.
+
 **Fail-closed by construction.** Fault and HALT release every lane, RUN low
 releases them within two synchronized samples, a WAIT with a timeout completes
 or faults within it, and host traffic cannot fault the engine. These are proven
@@ -73,6 +90,7 @@ cover targets show the properties are not vacuous.
 | Original protocol tests | 2 RTL mutations | each detected ([evidence](../reports/mutation-checks.json)) |
 | Gate-level SDF simulation | path delays scaled 30× | fetch test fails, so delays are applied ([evidence](../reports/sdf-tests.json)) |
 | Fault-demo timing bound | firmware built for a target one clock slower | faults on its bounded wait |
+| Receiver fingerprint | decode widths shifted one class; receiver labels shuffled | cross-check fails on 895/895 runs; 9/9 identifications wrong ([evidence](../reports/fingerprint.json)) |
 
 The controls have found real gaps. One formal property silently excluded the
 CAPTURE instruction's guard: a design with that guard removed passed the old
@@ -87,9 +105,9 @@ passed Tiny Tapeout precheck with 0 errors, gl_test 20/20 and SDF simulation
 added since and the sweep pass on the same routed netlist with SDF at all three
 corners (12/12, local). The RTL has not changed since that layout.
 
-**Reproducibility.** Every push runs the regression and the sweep in CI, and CI
-fails unless the demo and sweep evidence it produces match the committed reports
-byte for byte. A separate workflow reruns the proofs, covers and all seven
+**Reproducibility.** Every push runs the regression, the sweep and the receiver
+fingerprint in CI, and CI fails unless the demo, sweep and fingerprint evidence
+it produces match the committed reports byte for byte. A separate workflow reruns the proofs, covers and all seven
 formal controls with pinned OSS CAD Suite tools whenever the engine, properties
 or formal tooling change. The physical flow is the official Tiny Tapeout `gds`
 action, also runnable locally.
@@ -105,12 +123,15 @@ action, also runnable locally.
 | Gate-level (CI) | precheck 0 errors, gl_test 20/20, SDF 60/60 |
 | Formal | bmc, k-induction proof and cover pass |
 | Negative controls | 7 formal, 9 streaming, 2 RTL, 1 SDF: all detected |
+| Receiver fingerprint | 5 algorithms, 9 receiver/phase variants identified blind in 5–6 engine runs each; 1,061 runs |
+| Fingerprint controls | twin → shared class, one-clock variant → itself; left out of the map → misidentified (recorded limit) |
 
 ## Reproduce
 
 ```sh
 just setup && just test      # 22-test RTL regression
 just fault-sweep             # 100-run sweep -> build/fault-sweep.json
+just fingerprint             # receiver fingerprinting -> build/fingerprint.json
 just capture-demo            # normal and faulted capture traces
 just formal                  # bmc, prove, cover (needs sby on PATH or nix-portable)
 just setup-physical && just harden   # full CMOS5L layout, about 50 minutes
@@ -123,6 +144,9 @@ just test-sdf nom_slow_1p08V_125C    # routed netlist with SDF delays
   (pull-ups, I²C rise times, UART levels) is not established.
 - Target response latencies in the fault demo are model parameters, not device
   measurements.
+- Fingerprinting uses idealized receiver models on the engine's own clock (no
+  ppm error or metastability), and their verdict-report lanes are a fixture. It
+  distinguishes algorithms in simulation; it does not identify real parts.
 - I²C is single-controller: no retries, bus recovery or multi-controller clock
   synchronization.
 - Icarus applies SDF path delays but not setup/hold checks; STA is the timing

@@ -25,6 +25,13 @@ fault-sweep:
     mkdir -p build
     PATH="{{justfile_directory()}}/.venv/bin:$PATH" SWEEP_REPORT="{{justfile_directory()}}/build/fault-sweep.json" make -C test COCOTB_TEST_MODULES=test_sweep
 
+# Receiver fingerprinting: model checks, then real engine runs that tell five UART
+# receiver algorithms apart from their verdicts alone; deterministic JSON evidence.
+fingerprint:
+    mkdir -p build
+    uv run --python .venv/bin/python test/receivers.py
+    PATH="{{justfile_directory()}}/.venv/bin:$PATH" FINGERPRINT_REPORT="{{justfile_directory()}}/build/fingerprint.json" FINGERPRINT_TIMING="{{justfile_directory()}}/build/fingerprint-timing.json" make -C test COCOTB_TEST_MODULES=test_fingerprint COCOTB_RESULTS_FILE=results-fingerprint.xml
+
 stream-demo:
     uv run --python .venv/bin/python tools/streaming.py spi-stream.bin --protocol spi --count 32
     uv run --python .venv/bin/python tools/streaming.py uart-rx.bin --protocol uart-rx --count 16

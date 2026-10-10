@@ -1,10 +1,12 @@
-# Roadmap — updated September 23, 2026
+# Roadmap — updated October 10, 2026
 
 ## Design intent
 
 A programmable protocol exerciser for bringing up and testing hardware. Build a small deterministic engine first, then establish a distinctive demonstration: inject a controlled timing/protocol fault and capture the target's response. Novelty is a proposal, not a claim that this capability is unprecedented.
 
 ## Completed
+
+Receiver fingerprinting (October 10): firmware-only probe families tell five UART receiver models apart from their captured verdicts. The run includes a phase-aware decision tree, five negative controls and a byte-checked report in CI. A one-clock receiver left out of the map is misidentified, and that is recorded as a limit ([verification](verification.md), [evidence](../reports/fingerprint.json)).
 
 Review fixes and CI (September 18–23): four review findings fixed with negative controls (22 RTL regressions, nine streaming and seven formal controls; the new tests pass on the routed netlist with SDF at three corners). CI now also runs the fault sweep with a byte-for-byte evidence check, and a `formal` workflow reruns the proofs and controls with pinned OSS CAD Suite tools. Submission write-up drafted in `submission.md`.
 

@@ -17,10 +17,15 @@ jobs:
         run: PATH="$PWD/.venv/bin:$PATH" DEMO_REPORT="$PWD/test/fault-demo.json" make -C test
       - name: Fault-length sweep
         run: PATH="$PWD/.venv/bin:$PATH" SWEEP_REPORT="$PWD/test/fault-sweep.json" make -C test COCOTB_TEST_MODULES=test_sweep COCOTB_RESULTS_FILE=results-sweep.xml
+      - name: Receiver model checks
+        run: .venv/bin/python test/receivers.py
+      - name: Receiver fingerprint
+        run: PATH="$PWD/.venv/bin:$PATH" FINGERPRINT_REPORT="$PWD/test/fingerprint.json" FINGERPRINT_TIMING="$PWD/test/fingerprint-timing.json" make -C test COCOTB_TEST_MODULES=test_fingerprint COCOTB_RESULTS_FILE=results-fingerprint.xml
       - name: Committed evidence matches this run
         run: |
           cmp test/fault-demo.json reports/fault-demo.json
           cmp test/fault-sweep.json reports/fault-sweep.json
+          cmp test/fingerprint.json reports/fingerprint.json
       - name: Test summary
         uses: test-summary/action@v2.4
         with:
@@ -34,4 +39,6 @@ jobs:
             test/results*.xml
             test/fault-demo.json
             test/fault-sweep.json
+            test/fingerprint.json
+            test/fingerprint-timing.json
             test/tb.fst

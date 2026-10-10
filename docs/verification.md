@@ -328,3 +328,117 @@ First runs, on commit 35b3de0 ([formal](https://github.com/dishishshawn/protocol
 | Fault sweep | 100 runs | 100 runs, evidence byte-identical |
 
 The CI report's source hashes equal those in `reports/formal.json`.
+
+## Receiver fingerprinting (October 10, 2026)
+
+`just fingerprint` ([evidence](../reports/fingerprint.json)) asks whether the
+way a receiver reacts to malformed frames identifies the receiver. Five
+independently written UART receiver models (`test/receivers.py`) listen on
+lane 0, the engine drives 179 malformed frames from firmware, and each
+receiver's verdict comes back only through the capture FIFO. No RTL changed.
+
+**Receivers**, at 32 clocks/bit: `MidSample` (one sample at 16 + 32k, no start
+validation); `Majority16` and `Majority8` (majority of three oversampling ticks
+at 14/16/18 and 12/16/20 clocks; the start edge is seen at a tick, so they have
+2 and 4 tick phases); `EdgeResync` (every transition re-centres the next
+sample); `LenientStop` (start validation, no stop check). Two controls:
+`MidSampleTwin` (MidSample's algorithm, written separately) and
+`MidSamplePlus1` (samples one clock late). Each docstring states the algorithm;
+none claims to match a commercial part. `python test/receivers.py` checks each
+model against hand-derived stop-bit, glitch, false-start and skew boundaries
+without the simulator, checks the twin against MidSample on 400 random
+waveforms, and checks that MidSample reproduces all 100 `UARTReceiver` verdicts
+recorded in `reports/fault-sweep.json`. Four planted model errors each fail
+these checks.
+
+**Verdict reporting is a fixture convention.** Each receiver owns one of lanes
+1–4. 480 clocks after lane 0's output enable first asserts, every receiver
+raises its lane for 4, 8, 12 or 16 clocks: OK, DATA (stop high, wrong byte),
+FRAME (stop low) or NONE. The rises coincide, so four receivers need at most
+five capture entries, and decoding uses only fall − rise. A real device would
+report through its own firmware, for example an echo or an error flag.
+
+**Probes.** P1: stop bit low for L = 0–31 clocks (32 probes). P2: a W ∈ {1, 2,
+3, 4, 5, 6, 8}-clock low glitch at offset 8–24 inside data bit 3 of 0xFF (119).
+P3: a W-clock idle pulse ending 2T before a 0x55 frame (10). P4: the whole frame
+at T + δ, δ = −4…+4, bytes 0x55 and 0x0F (18). Each probe is a program of at
+most 19 words built from exact-length DRIVEs.
+
+**Every run checks** that lane 0 as the fixture saw it equals the probe
+waveform clock for clock, that the verdict decoded from the captures equals each
+attached model's own verdict, that each attached receiver reports exactly once,
+that there is no capture overflow, and that the sticky error page reads 0. On
+every non-P3 group-A run the regression's `UARTReceiver` runs alongside and
+agrees with `MidSample`. P3 is excluded because its false starts trip
+`UARTReceiver`'s start-bit assertion by design.
+
+**Map.** 895 runs: every probe against both receiver groups at tick phase 0,
+plus three more group-A runs for the other tick phases.
+
+| Family | Pairs of the five receivers it separates on its own |
+| --- | --- |
+| P1 stop-short | 4/10: LenientStop from the rest |
+| P2 mid-bit glitch | 9/10: all but MidSample–LenientStop |
+| P3 idle false start | 4/10: LenientStop from the rest |
+| P4 bit-period skew | 7/10: EdgeResync and LenientStop from the rest |
+
+- **P1 cannot separate the mid-bit receivers.** At phase 0, MidSample,
+  Majority16, Majority8 and EdgeResync all switch from OK to FRAME between
+  L = 16 and 17. The existing stop-bit probe cannot tell them apart, as the
+  handoff expected.
+- **P2 can.** A 1-clock glitch at offset 16 flips only the single-sample
+  receivers (MidSample, LenientStop). A 3-clock glitch at 14–16 also flips
+  Majority16 but not Majority8, and a 5-clock glitch at 12–16 flips all three.
+  EdgeResync survives every P2 glitch, because the glitch's own edges move its
+  sample past the glitch. Removing P2 makes MidSample, Majority16 and Majority8
+  pairwise inseparable. Removing any other family loses no pair.
+- **P3 as specified separates only LenientStop.** A receiver that accepts a
+  short false start is two bits out of step with the real frame. Because 0x55
+  repeats every two bits, it still decodes 0x55 with a high stop bit. Pulses of
+  17 clocks or more pass every receiver's start check, and all of them report
+  FRAME. In the pure-Python models only (not run on the engine), byte 0x0F with
+  the same timing separates MidSample from every start-validating receiver at
+  all W ≤ 16.
+- **P4 separates EdgeResync and LenientStop.** EdgeResync fails only 0x0F at
+  δ = −4. At phase 0, MidSample, Majority16 and Majority8 give identical skew
+  verdicts.
+- **Tick phase moves the boundaries.** The P1 FRAME boundary moves from L = 17
+  to 18 for Majority16 at phase 1, and to 18, 19 and 20 for Majority8 at phases
+  1–3. Across all phases, MidSample–Majority16 and Majority16–Majority8 are each
+  still separated by three probes.
+
+**Identification.** The tree is greedy: at each node it picks the probe that
+leaves the smallest largest group, breaking ties by lowest index. Each leaf gets
+three confirmation probes from those the tree does not use. The rule prefers
+probes next to one of the leaf's own verdict boundaries and takes them one
+family at a time. `identify` sees only a callable that runs a probe on the
+engine and returns the decoded verdict.
+
+| Round | Signatures | Tree (depth 3) | Result |
+| --- | --- | --- | --- |
+| 1 | phase 0 for every receiver | P2 W=1 o=16, P1 L=17, P2 W=3 o=14, P2 W=5 o=12 | 5/9: Majority16 phase 1 and Majority8 phases 1–3 identified as EdgeResync, and the confirmations did not catch it |
+| 2 | Majority16 and Majority8 signed by their set of signatures across phases | P2 W=4 o=14, P1 L=17, P2 W=1 o=16, P1 L=18, P2 W=8 o=12 | 9/9 correct, 5–6 engine runs each including confirmations |
+
+**Negative controls.**
+
+| Control | Expected | Result |
+| --- | --- | --- |
+| MidSampleTwin in the map | the class {MidSample, MidSampleTwin} | as expected; no probe separates them |
+| MidSamplePlus1 in the map | itself, at one-clock resolution | as expected, via P1 L=17 and L=18. 16 probes separate it from MidSample: P1 L=17, 14 in P2, P3 W=17 |
+| MidSamplePlus1 left out of the map | unknown | **missed: identified as Majority16.** On the tree's probes, one sample a clock late behaves like Majority16's phase-1 vote, and the leaf's confirmations (P2 W=3 o=14, P3 W=17, P4 0x55 d=−2) agree with it. 4 of the 174 unused probes would have exposed it. Recorded as a limit of the probe set; the probes were not tuned. |
+| Labels shuffled (seed 20261010) | some identification wrong, and detected | 9/9 wrong, detected. Every label moves, so this shows that the scoring catches a wrong map, not how sensitive the classifier is |
+| Decode widths shifted one class | verdict cross-check fails | fails on 895/895 map runs |
+
+**Cost and reproducibility.** The test makes 1,061 engine runs and simulates
+734,099 bus clocks. Locally it takes 51–55 s (Icarus 12.0), so CI runs the full
+grid. Two consecutive local runs wrote byte-identical reports. Wall time goes
+to `build/fingerprint-timing.json` instead of the report, which keeps the
+report byte-comparable.
+
+**Scope.** The models are idealized: they run on the engine's clock, with no ppm
+error, jitter or metastability. The claim is that the instrument distinguishes
+these algorithms in simulation, not that it identifies real parts. The report
+lanes are a fixture. Confirmation is the weak step. Its probes often fall on the
+side of a boundary where every mapped receiver agrees (P1 L=16 and P3 W=16
+appear in most confirmations). That is why both the round-1 phase errors and the
+left-out control got through.
