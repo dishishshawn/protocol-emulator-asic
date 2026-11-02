@@ -1,6 +1,6 @@
 # Programmable protocol emulator ASIC
 
-A simulation-first entry for the [Jane Street ASIC competition](https://blog.janestreet.com/protocol-emulator-asic-competition/), due **January 18, 2027**. This repository belongs to [dishishshawn](https://github.com/dishishshawn/protocol-emulator-asic) and is private during development; the competition submission must be open source.
+A simulation-first entry for the [Jane Street ASIC competition](https://blog.janestreet.com/protocol-emulator-asic-competition/), due **January 18, 2027**. This repository belongs to [dishishshawn](https://github.com/dishishshawn/protocol-emulator-asic) and is public during development, as Jane Street encourages; the competition submission must be open source.
 
 The chip executes firmware that drives, samples and shifts data through five bidirectional lanes. UART, SPI and I²C are programs using the same engine. Host FIFOs support streaming transfers; timestamped capture records a target's response to precisely timed protocol faults.
 
@@ -81,7 +81,7 @@ Outputs land in `runs/wokwi/` exactly as in CI: `final/gds`, `final/nl`, `final/
 
 Pushes run the RTL regression, the fault sweep and the receiver fingerprint, and fail unless the demo, sweep and fingerprint evidence match `reports/` byte for byte. The `formal` workflow reruns the proofs, covers and formal negative controls whenever the engine, properties or formal tooling change. The official GDS, documentation and FPGA workflows are manually dispatched. No competition signup or final submission has been made.
 
-Next: the [submission write-up](docs/submission.md) is drafted; before submitting, make the repository public and complete the sign-up and final forms. If the RTL changes, rerun the physical flow and gate-level regressions. No FPGA is required for the current work.
+Next: the [submission write-up](docs/submission.md) is drafted; before submitting, complete the sign-up and final forms. If the RTL changes, rerun the physical flow and gate-level regressions. No FPGA is required for the current work.
 
 ## Provenance
 

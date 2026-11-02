@@ -158,7 +158,6 @@ just test-sdf nom_slow_1p08V_125C    # routed netlist with SDF delays
 
 ## Before submitting
 
-- The repository is private; the competition requires open source.
 - The competition sign-up form has not been submitted.
 - The final submission form has not been published yet.
 - If the RTL changes before January, rerun the physical flow and gate-level
